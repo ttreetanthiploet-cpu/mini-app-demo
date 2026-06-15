@@ -1,0 +1,1045 @@
+@import "tailwindcss";
+
+/* ============================================================
+   KTB / Paotang Design Tokens
+   ============================================================ */
+:root {
+  --accent: #00a4e5;
+
+  --ink: #16323f;
+  --ink-2: #2c4b59;
+  --muted: #6b8395;
+  --faint: #93a8b6;
+  --line: #e3edf4;
+  --line-2: #eef3f7;
+  --bg: #eef4fa;
+  --card: #ffffff;
+  --ok: #1f9d6b;
+  --radius: 20px;
+
+  --accent-dark: color-mix(in oklab, var(--accent), #00263d 26%);
+  --accent-deep: color-mix(in oklab, var(--accent), #001a2e 44%);
+  --accent-ink: color-mix(in oklab, var(--accent), #002133 52%);
+  --accent-soft: color-mix(in oklab, var(--accent), #ffffff 88%);
+  --accent-soft2: color-mix(in oklab, var(--accent), #ffffff 80%);
+  --accent-line: color-mix(in oklab, var(--accent), #ffffff 70%);
+}
+
+@theme inline {
+  --color-accent: var(--accent);
+  --color-ktb-ink: var(--ink);
+  --color-ktb-ink2: var(--ink-2);
+  --color-ktb-muted: var(--muted);
+  --color-ktb-faint: var(--faint);
+  --color-ktb-line: var(--line);
+  --color-ktb-bg: var(--bg);
+  --color-ktb-card: var(--card);
+  --color-ktb-ok: var(--ok);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: "IBM Plex Sans Thai", "IBM Plex Sans", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+/* ============================================================
+   CHAT SCREEN
+   ============================================================ */
+.chat-screen {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+/* ---- Header ---------------------------------------------- */
+.chat-header {
+  padding: 12px 12px 12px;
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-bottom: 1px solid var(--line);
+  box-shadow:
+    0 1px 0 rgba(20, 50, 65, 0.02),
+    0 6px 16px -12px rgba(20, 50, 65, 0.18);
+  z-index: 5;
+  flex-shrink: 0;
+}
+
+.hdr-btn {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  border: none;
+  background: transparent;
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+
+.hdr-btn:active {
+  background: var(--accent-soft);
+}
+
+.hdr-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hdr-meta {
+  min-width: 0;
+}
+
+.hdr-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hdr-verify {
+  color: var(--accent);
+  display: inline-flex;
+}
+
+.hdr-status {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1;
+}
+
+.dot-online {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ok), #fff 78%);
+}
+
+/* ---- Scroll area ----------------------------------------- */
+.chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px 16px 8px;
+  scroll-behavior: smooth;
+}
+
+.chat-scroll::-webkit-scrollbar {
+  width: 0;
+}
+
+/* day chip */
+.day-chip {
+  margin: 2px auto 14px;
+  width: max-content;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
+  background: color-mix(in oklab, var(--ink), #fff 90%);
+  padding: 4px 11px;
+  border-radius: 999px;
+}
+
+/* ============================================================
+   WELCOME / EMPTY STATE
+   ============================================================ */
+.welcome {
+  padding: 6px 4px 2px;
+  animation: rise 0.5s ease both;
+}
+
+.welcome-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: radial-gradient(
+    120% 120% at 18% -10%,
+    var(--accent-soft2) 0%,
+    var(--accent-soft) 42%,
+    #ffffff 78%
+  );
+  border: 1px solid var(--accent-line);
+  padding: 24px 20px 22px;
+  box-shadow: 0 18px 40px -28px rgba(20, 50, 65, 0.4);
+}
+
+.welcome-hero::after {
+  content: "";
+  position: absolute;
+  right: -60px;
+  top: -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    color-mix(in oklab, var(--accent), #fff 30%),
+    transparent 62%
+  );
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.welcome-avatar {
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-greet {
+  position: relative;
+  z-index: 1;
+  margin: 16px 0 0;
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  letter-spacing: -0.02em;
+}
+
+.welcome-sub {
+  position: relative;
+  z-index: 1;
+  margin: 9px 0 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 92%;
+  text-wrap: pretty;
+}
+
+.suggest-label {
+  margin: 22px 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.suggest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.suggest-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  width: 100%;
+  padding: 14px 15px;
+  cursor: pointer;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.suggest-card:hover {
+  border-color: var(--accent-line);
+  box-shadow: 0 10px 22px -16px rgba(20, 50, 65, 0.4);
+}
+
+.suggest-card:active {
+  transform: scale(0.985);
+}
+
+.suggest-ico {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.suggest-txt {
+  flex: 1;
+}
+
+.suggest-sub {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.suggest-go {
+  color: var(--faint);
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   MESSAGE ROWS
+   ============================================================ */
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 9px;
+  animation: rise 0.34s ease both;
+}
+
+.row.user {
+  flex-direction: row-reverse;
+}
+
+.row .avatar-slot {
+  width: 28px;
+  flex: 0 0 auto;
+}
+
+.bubble {
+  max-width: 78%;
+  padding: 10px 13px;
+  font-size: 14px;
+  line-height: 1.5;
+  border-radius: var(--radius);
+  position: relative;
+  text-wrap: pretty;
+  white-space: pre-wrap;
+}
+
+.bubble.bot {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 7px;
+  box-shadow: 0 8px 18px -16px rgba(20, 50, 65, 0.5);
+}
+
+.bubble.user {
+  color: #fff;
+  border-bottom-right-radius: 7px;
+  background: linear-gradient(160deg, var(--accent) 0%, var(--accent-dark) 100%);
+  box-shadow: 0 10px 20px -14px color-mix(in oklab, var(--accent), #000 30%);
+}
+
+.bubble.agent {
+  background: #f3f7fa;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 7px;
+}
+
+.msg-time {
+  font-size: 10.5px;
+  color: var(--faint);
+  margin: 2px 4px 0;
+}
+
+.row.user .msg-time {
+  text-align: right;
+}
+
+/* typing */
+.typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 13px 14px;
+  align-items: center;
+}
+
+.typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--accent), #fff 30%);
+  animation: blink 1.3s infinite ease-in-out both;
+}
+
+.typing span:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.typing span:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+/* quick replies */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 12px 36px;
+  animation: rise 0.34s ease both;
+}
+
+.chip {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--accent-ink);
+  border: 1.5px solid var(--accent-line);
+  transition:
+    transform 0.14s ease,
+    background 0.14s ease;
+}
+
+.chip:hover {
+  background: var(--accent-soft);
+}
+
+.chip:active {
+  transform: scale(0.96);
+}
+
+/* ============================================================
+   ACTION BUTTONS
+   ============================================================ */
+.actions-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 2px 0 12px 36px;
+  max-width: 88%;
+  animation: rise 0.34s ease both;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 13px 6px 11px;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  color: var(--ink);
+  transition:
+    transform 0.14s ease,
+    border-color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.action-btn:hover {
+  border-color: var(--accent-line);
+  box-shadow: 0 10px 20px -16px rgba(20, 50, 65, 0.45);
+}
+
+.action-btn:active {
+  transform: scale(0.96);
+}
+
+.action-ico {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.action-lbl {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   INTAKE FORM CARD
+   ============================================================ */
+.form-card {
+  margin: 2px 0 12px 36px;
+  max-width: 92%;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  animation: rise 0.4s ease both;
+  box-shadow: 0 14px 30px -22px rgba(20, 50, 65, 0.5);
+}
+
+.form-head {
+  padding: 14px 16px;
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  background: linear-gradient(
+    180deg,
+    var(--accent-soft) 0%,
+    color-mix(in oklab, var(--accent-soft), #fff 55%) 100%
+  );
+  border-bottom: 1px solid var(--line);
+}
+
+.form-head-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  color: var(--accent-dark);
+  box-shadow: 0 2px 6px rgba(20, 50, 65, 0.08);
+}
+
+.form-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+.form-desc {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  margin-top: 2px;
+  line-height: 1.45;
+}
+
+.form-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.step-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--card);
+  padding: 3px 9px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  box-shadow: 0 1px 4px rgba(20, 50, 65, 0.08);
+}
+
+.step-track {
+  display: flex;
+  gap: 5px;
+  padding: 12px 16px 0;
+}
+
+.step-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: background 0.25s ease;
+}
+
+.step-seg[data-on="true"] {
+  background: var(--accent);
+}
+
+.form-nav {
+  display: flex;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.form-nav .form-submit {
+  flex: 1;
+  margin-top: 0;
+}
+
+.btn-ghost {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 13px 18px;
+  border-radius: 13px;
+  flex: 0 0 auto;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  color: var(--ink-2);
+  transition: background 0.14s ease;
+}
+
+.btn-ghost:active {
+  background: var(--line-2);
+}
+
+.form-submit[data-dim="true"] {
+  opacity: 0.5;
+}
+
+.field-err {
+  font-size: 11px;
+  color: #d8694a;
+  margin-top: 1px;
+}
+
+.field-input[data-err="true"],
+.field-select[data-err="true"] {
+  border-color: #e7a994;
+  background: #fdf6f3;
+}
+
+.confirm-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.confirm-review {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 4px 14px;
+  background: #fafcfe;
+}
+
+.confirm-prompt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.confirm-q {
+  color: var(--accent-dark);
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.field-label .req {
+  color: #d8694a;
+  margin-left: 2px;
+}
+
+.field-input,
+.field-select {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  padding: 11px 12px;
+  border-radius: 11px;
+  border: 1.5px solid var(--line);
+  background: #fafcfe;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+  width: 100%;
+}
+
+.field-input::placeholder {
+  color: var(--faint);
+}
+
+.field-input:focus,
+.field-select:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3.5px var(--accent-soft);
+}
+
+.field-select {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236b8395' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  padding-right: 32px;
+}
+
+.field-amount {
+  position: relative;
+}
+
+.field-amount .baht {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.field-amount .field-input {
+  padding-left: 28px;
+}
+
+.form-submit {
+  margin-top: 3px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 13px;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(160deg, var(--accent) 0%, var(--accent-dark) 100%);
+  box-shadow: 0 12px 22px -12px color-mix(in oklab, var(--accent), #000 26%);
+  transition:
+    transform 0.14s ease,
+    opacity 0.14s ease;
+  width: 100%;
+}
+
+.form-submit:active {
+  transform: scale(0.985);
+}
+
+.form-submit:disabled {
+  background: #cdd9e1;
+  color: #fff;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ---- locked / submitted summary -------------------------- */
+.summary-card {
+  margin: 2px 0 12px 36px;
+  max-width: 92%;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  animation: rise 0.4s ease both;
+  box-shadow: 0 14px 30px -24px rgba(20, 50, 65, 0.5);
+}
+
+.summary-head {
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: color-mix(in oklab, var(--ok), #fff 90%);
+  border-bottom: 1px solid color-mix(in oklab, var(--ok), #fff 78%);
+}
+
+.summary-check {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--ok);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-head-txt {
+  flex: 1;
+}
+
+.summary-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--ok), #000 30%);
+}
+
+.summary-sub {
+  font-size: 11px;
+  color: color-mix(in oklab, var(--ok), #2c4b59 55%);
+  margin-top: 1px;
+}
+
+.lock-ico {
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+
+.summary-body {
+  padding: 6px 16px 12px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.summary-row:last-child {
+  border-bottom: none;
+}
+
+.summary-k {
+  font-size: 12px;
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+
+.summary-v {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+}
+
+.summary-foot {
+  padding: 10px 16px;
+  font-size: 10.5px;
+  color: var(--faint);
+  background: #fafcfe;
+  border-top: 1px solid var(--line-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ref-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+/* ============================================================
+   AGENT HAND-OFF
+   ============================================================ */
+.sys-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 6px 14px;
+  animation: rise 0.4s ease both;
+}
+
+.sys-divider::before,
+.sys-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.sys-divider span {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.connecting {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 2px 0 12px 36px;
+  max-width: 80%;
+  padding: 13px 15px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 10px 22px -18px rgba(20, 50, 65, 0.5);
+  animation: rise 0.34s ease both;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2.5px solid var(--accent-line);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.connecting-txt {
+  font-size: 13px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.avatar-agent {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(155deg, #5a7081, #324a59);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px -4px rgba(20, 50, 65, 0.5);
+}
+
+/* ============================================================
+   INPUT BAR
+   ============================================================ */
+.chat-input {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+}
+
+.input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  border-radius: 22px;
+  padding: 4px 6px 4px 15px;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.input-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3.5px var(--accent-soft);
+  background: #fff;
+}
+
+.chat-input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  padding: 9px 0;
+}
+
+.chat-input input::placeholder {
+  color: var(--faint);
+}
+
+.send-btn {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(160deg, var(--accent) 0%, var(--accent-dark) 100%);
+  box-shadow: 0 8px 16px -8px color-mix(in oklab, var(--accent), #000 28%);
+  transition:
+    transform 0.14s ease,
+    opacity 0.14s ease;
+}
+
+.send-btn:active {
+  transform: scale(0.92);
+}
+
+.send-btn:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.mascot-float {
+  animation: float-soft 4s ease-in-out infinite;
+}

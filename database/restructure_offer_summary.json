@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "sessionId": "demo-session-001",
+    "solutionDesc": "อัตราขั้นต่ำของธนาคาร",
+    "plan": "PLMOU01",
+    "planDesc": "สินเชื่อรวมหนี้ MOU แบบไม่มีหลักประกัน",
+    "totalExpInt": 23078.59373087276,
+    "term": 96,
+    "installment": 1200,
+    "constantPayment": true,
+    "planId": "PLMOU0120260615152256",
+    "refAccNo": "10000006",
+    "createdAt": "2026-06-15T15:22:57.056Z",
+    "updatedAt": "2026-06-15T15:22:57.056Z"
+  },
+  {
+    "id": 2,
+    "sessionId": "demo-session-001",
+    "solutionDesc": "ความสามารถในการชำระ",
+    "plan": "PLMOU02",
+    "planDesc": "สินเชื่อรวมหนี้ MOU แบบไม่มีหลักประกัน",
+    "totalExpInt": 12212.052343672098,
+    "term": 52,
+    "installment": 2000,
+    "constantPayment": true,
+    "planId": "PLMOU0220260615152256",
+    "refAccNo": "10000006",
+    "createdAt": "2026-06-15T15:22:57.056Z",
+    "updatedAt": "2026-06-15T15:22:57.056Z"
+  }
+]

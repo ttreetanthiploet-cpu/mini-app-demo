@@ -42,3 +42,4 @@ next-env.d.ts
 
 # playwright test artifacts
 .playwright-mcp/
+.claude/settings.local.json

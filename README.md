@@ -1,12 +1,13 @@
 # Paotang Advisor — Chat Mini App
 
-A mobile-first PWA chat interface for KTB (Krungthai Bank) debt advisory, built with Next.js 16, Tailwind CSS v4, and shadcn/ui. Frontend-only with mock state — no backend required.
+A mobile-first PWA chat interface for KTB (Krungthai Bank) debt advisory. Customers chat with an AI bot (น้องฟิน) that can recommend debt restructuring plans and escalate to a human agent. Built with Next.js 16, Tailwind CSS v4, and shadcn/ui; backed by a file-based JSON database and an n8n automation webhook.
 
 ## Features
 
-- **Chat UI** — bot (น้องฟิน) and human agent (เจ้าหน้าที่ ณัฐพล) modes with typing indicators, chip suggestions, and action shortcuts
-- **Debt intake form** — 4-step guided flow (income → debts → goal → confirm) with field validation and a locked summary card
-- **Agent handoff** — animated connecting state that transitions the chat to a human advisor
+- **Chat UI** — bot (น้องฟิน) modes with typing indicators, quick-reply chips, and banking action shortcuts
+- **Debt restructuring advisor** — AI-driven conversation that reads customer profile, account details, and prior offers, then forwards them to an n8n workflow for plan recommendations and render to present in HTML format
+- **Agent handoff** — animated connecting state that transitions the chat to a submit offer to advisor
+- **Persistent conversation log** — every message (user and bot) is appended to the local JSON database; offer summaries and session state are kept in sync after each n8n response
 - **PWA** — installable, standalone display, service worker caching, app icons
 - **KTB Sky Blue design system** — `#00A4E5` theme, IBM Plex Sans Thai font, iOS safe-area support
 
@@ -20,9 +21,12 @@ A mobile-first PWA chat interface for KTB (Krungthai Bank) debt advisory, built 
 | PWA | next-pwa v5.6.0 |
 | Language | TypeScript 5 |
 | Font | IBM Plex Sans Thai via `next/font/google` |
+| AI Orchestration | n8n webhook (external) |
+| Database | File-based JSON (CSV seed → JSON, no external DB) |
 
 ## Getting Started
 
+source ~/.nvm/nvm.sh
 ```bash
 npm install
 npm run dev
@@ -30,10 +34,18 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) on a mobile viewport (or DevTools device emulation at 390×844).
 
+### Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `N8N_WEBHOOK_URL` | hardcoded staging URL | n8n webhook endpoint that processes chat messages |
+
+Set `N8N_WEBHOOK_URL` in `.env.local` to point at your own n8n instance.
+
 ## Scripts
 
 ```bash
-npm run dev      # Development server (webpack mode)
+npm run dev      # Development server (webpack mode, PWA disabled)
 npm run build    # Production build + generate service worker
 npm run start    # Serve production build
 ```
@@ -44,47 +56,104 @@ npm run start    # Serve production build
 
 ```
 app/
-  layout.tsx          # Font, viewport, PWA metadata
-  page.tsx            # Entry — renders <ChatApp />
-  globals.css         # Full design system (tokens, layout, components)
+  layout.tsx              # Font, viewport, PWA metadata
+  page.tsx                # Entry — renders <ChatApp />
+  globals.css             # Full design system (tokens, layout, components)
+  api/
+    chat/route.ts         # POST /api/chat — records user message, calls n8n, persists response
+    conversation/route.ts # POST /api/conversation — direct conversation append
 
 components/
   chat/
-    chat-app.tsx      # Main state machine — messages, flows, mode
-    header.tsx        # Bot / agent identity bar
-    input-bar.tsx     # Text input + send button
-    welcome.tsx       # Topic picker shown before first message
+    chat-app.tsx          # Main state machine — messages, flows, mode
+    header.tsx            # Bot / agent identity bar
+    input-bar.tsx         # Text input + send button
+    welcome.tsx           # Topic picker shown before first message
   intake/
-    intake-form.tsx   # 4-step stepper driven by DEBT_FLOW
-    form-field.tsx    # Single field renderer (number, select, text)
-    confirm-review.tsx # Pre-submit summary review
-    summary-card.tsx  # Locked post-submit card
+    intake-form.tsx       # 4-step stepper driven by DEBT_FLOW
+    form-field.tsx        # Single field renderer (number, select, text)
+    confirm-review.tsx    # Pre-submit summary review
+    summary-card.tsx      # Locked post-submit card
   messages/
-    bubble.tsx        # User / bot / agent message bubble
+    bubble.tsx            # User / bot / agent message bubble
     typing-indicator.tsx
-    chip-row.tsx      # Quick-reply chips
-    action-row.tsx    # Banking shortcut buttons
-    connecting.tsx    # Agent connecting animation
-    system-divider.tsx # "Agent joined" divider
+    chip-row.tsx          # Quick-reply chips
+    action-row.tsx        # Banking shortcut buttons
+    connecting.tsx        # Agent connecting animation
+    system-divider.tsx    # "Agent joined" divider
 
 lib/
-  debtFlow.ts         # DEBT_FLOW data model, field validation, buildSummaryRows
-  utils.ts            # cn, fmtBaht, groupDigits, nowTime, sleep
+  database.ts             # File-based JSON store: read/write helpers for all tables
+  debtFlow.ts             # DEBT_FLOW data model, field validation, buildSummaryRows
+  utils.ts                # cn, fmtBaht, groupDigits, nowTime, sleep
+
+database/
+  customer_info.json      # Customer profile (seeded from CSV on first boot)
+  customer_acc_detail.json
+  conversation.json       # Append-only message log
+  session_info.json       # Per-session state (upsert)
+  restructure_offer_summary.json
+  restructure_offer_account.json
+  staff_escalation_info.json
 
 public/
-  manifest.json       # PWA manifest
-  sw.js               # Service worker (generated by next-pwa at build time)
-  icons/              # 192×192 and 512×512 PNG app icons
+  manifest.json           # PWA manifest
+  sw.js                   # Service worker (generated by next-pwa at build time)
+  icons/                  # 192×192 and 512×512 PNG app icons
 ```
+
+## API
+
+### `POST /api/chat`
+
+Main chat endpoint. Called by the frontend with a message; returns the n8n bot reply.
+
+**Request body**
+
+```json
+{
+  "sessionId": "string",
+  "customerId": "string",
+  "message": "string",
+  "messageType": "TEXT"
+}
+```
+
+**What it does (in order)**
+
+1. Appends the user message to `conversation.json`
+2. Loads customer profile, account details, session state, offer history, and conversation history from the JSON database
+3. Sends the full context payload to the n8n webhook
+4. Appends the bot reply to `conversation.json`
+5. Upserts session info from the n8n response
+6. Appends any new offer summaries and account-level offer details returned by n8n
+7. Appends staff escalation info if present
+8. Returns the raw n8n response to the frontend
+
+### `POST /api/conversation`
+
+Lightweight endpoint to directly append a message to the conversation log without triggering n8n. Accepts `{ sessionId, role, content, agentUsed, type }`.
+
+## Database
+
+The database is a set of JSON files under `database/`. On first boot, `lib/database.ts` seeds each file from the corresponding CSV if the JSON does not yet exist. Writes are synchronous (`fs.writeFileSync`), which is suitable for single-instance, low-concurrency demo use — not for production multi-process deployments.
+
+| File | Seeded from | Description |
+|---|---|---|
+| `customer_info.json` | `customer_info.csv` | Customer profile and eligibility |
+| `customer_acc_detail.json` | `customer_acc_detail.csv` | Loan account details |
+| `conversation.json` | `Conversation.csv` | Append-only chat history |
+| `session_info.json` | `sessionInfo.csv` | Per-session advisor state |
+| `restructure_offer_summary.json` | `restructureOfferSummary.csv` | Plan-level offer summaries |
+| `restructure_offer_account.json` | `restructureOfferAccount.csv` | Account-level offer details |
+| `staff_escalation_info.json` | `StaffEscalationInfo.csv` | Agent escalation records |
 
 ## Chat States
 
 | State | Trigger |
 |---|---|
 | Welcome | No messages yet — shows topic cards |
-| Active chat | Any message sent — bot responds with chips |
-| Intake form | "ปรึกษาแก้ปัญหาหนี้ส่วนบุคคล" selected |
-| Locked summary | Form submitted — shows KTB ref number |
+| Active chat | Any message sent — calls `/api/chat`, bot responds |
 | Agent mode | "คุยกับเจ้าหน้าที่" selected — header and replies switch to agent identity |
 
 ## Security Headers

@@ -1,13 +1,2 @@
 [
-  {
-    "id": 1,
-    "considerAccount": "10000006",
-    "maxTerm": 360,
-    "maxPayment": 2000,
-    "preference": "{\"DebtSituation\":\"DebtBurden\",\"refPlanID\":\"PLMOU0220260615152256\"}",
-    "narrative": "The advisor proposed two debt restructuring plans. The customer expressed interest in the second option but requested a slightly lower monthly payment. Routing back to the advisor to adjust the proposed plan.",
-    "sessionId": "demo-session-001",
-    "createdAt": "2026-06-15T15:22:11.445Z",
-    "updatedAt": "2026-06-15T15:24:13.756Z"
-  }
 ]

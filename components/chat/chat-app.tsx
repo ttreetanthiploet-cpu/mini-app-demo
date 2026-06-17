@@ -20,7 +20,7 @@ import type { SummaryData } from "@/components/intake/summary-card";
 
 // ─── Webhook & customer config ────────────────────────────────────────────────
 // customerId = cif (the database customer ID)
-const DEFAULT_CIF     = "1210003";
+const DEFAULT_CIF     = "121000239067";
 const DEFAULT_SESSION_ID = "demo-session-001";
 const N8N_WEBHOOK_URL = "/api/chat";
 const AGENT_NAME      = "น้องฟิน";
@@ -626,7 +626,7 @@ function summaryHTML(){
     +'<div class="account-bar"><div class="account-label">บัญชีที่พิจารณาเข้าร่วมมาตรการ</div><div class="account-value">'+h(D.accounts)+'</div></div>'
     +'<div class="highlight-box"><div class="before-after">ลดค่างวดรายเดือน'+h(D.step_label||'')+'</div><div class="price"><div class="old-price">'+h(D.prev_inst)+'</div><div class="arr">→</div><div><span class="after">'+h(D.new_inst)+'</span><span class="unit">บาท</span></div></div></div>'
     +'<div class="meta"><div class="mr"><div class="ml">ภาระหนี้คงเหลือรวม</div><div class="mv">'+h(D.total_os)+' บาท</div></div>'
-    +mr('พิจารณาข้อเสนอจาก',h(D.source_desc))
+    +mr('พิจารณาข้อเสนอ',h(D.source_desc))
     +mr('อัตราดอกเบี้ย',D.int_rate_new?'<span class="b">'+h(D.int_rate_new)+'</span>':'')
     +mr('ระยะเวลาผ่อนชำระจากอัตราผ่อนชำระเดิม',h(D.term_actual_old))
     +mr('ระยะเวลาผ่อนชำระ',D.term_change?'<span class="b">'+h(D.term_change)+'</span>':'')

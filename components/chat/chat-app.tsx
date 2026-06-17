@@ -81,10 +81,14 @@ export interface AccountDetailData {
   term_change: string;
   inst_old: string;
   inst_change: string;
+  inst_change_y1?: string;
+  inst_y2y3?: string;
+  inst_after_3m?: string;
+  inst_new_loan?: string;
+  balloon_payment?: string;
   int_total_old: string;
   int_total_change: string;
   inelig_note: string;
-  inst_after_3m?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -545,6 +549,8 @@ body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;displ
 .plan-id{display:block;color:#9ca3af;font-size:10px;font-weight:700;margin-bottom:2px}
 .title{font-size:12px;line-height:1.4;color:#111827;font-weight:700;word-break:break-word}
 .badge{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:999px;background:#fff4e5;color:#b45309;font-size:9px;font-weight:700}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:#fefce8;color:#854d0e;font-size:9px;font-weight:700;border:1px solid #fde047;white-space:nowrap;margin-top:4px}
+.status-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#eab308;display:inline-block;flex-shrink:0}
 .account-bar{margin-top:8px;padding:8px 10px;background:#F0FAFF;border:1px solid rgba(0,164,229,.20);border-radius:10px}
 .account-label{font-size:10px;color:#6b7280;margin-bottom:2px}
 .account-value{font-size:12px;color:#111827;font-weight:700;word-break:break-word}
@@ -622,14 +628,17 @@ function amr(l,v){if(!v)return '';return '<div class="amr"><div class="aml">'+h(
 function summaryHTML(){
   const badge=D.ncb_badge?'<div class="badge">'+h(D.ncb_badge)+'</div>':'';
   const balloon=(D.balloon_rows||[]).length?'<div class="final-box"><div class="final-title">ค่างวดส่วนสุดท้าย</div><div class="final-list">'+D.balloon_rows.map(r=>{const p=r.split('|');return '<div class="fi"><div class="fa">บัญชี '+h(p[0])+'</div><div class="fd">งวด '+h(p[1])+' • <span class="amt">'+h(p[2])+' บาท</span></div></div>';}).join('')+'</div></div>':'';
-  return '<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-id">'+h(D.plan_id)+'</span><div class="title">'+h(D.plan_desc)+'</div>'+badge+'</div></div>'
+  return '<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-id">'+h(D.plan_id)+'</span><div class="title">'+h(D.plan_desc)+'</div>'+badge+'<div class="status-badge">ข้อเสนอเบื้องต้น</div></div></div>'
     +'<div class="account-bar"><div class="account-label">บัญชีที่พิจารณาเข้าร่วมมาตรการ</div><div class="account-value">'+h(D.accounts)+'</div></div>'
     +'<div class="highlight-box"><div class="before-after">ลดค่างวดรายเดือน'+h(D.step_label||'')+'</div><div class="price"><div class="old-price">'+h(D.prev_inst)+'</div><div class="arr">→</div><div><span class="after">'+h(D.new_inst)+'</span><span class="unit">บาท</span></div></div></div>'
     +'<div class="meta"><div class="mr"><div class="ml">ภาระหนี้คงเหลือรวม</div><div class="mv">'+h(D.total_os)+' บาท</div></div>'
     +mr('พิจารณาข้อเสนอ',h(D.source_desc))
-    +mr('อัตราดอกเบี้ย',D.int_rate_new?'<span class="b">'+h(D.int_rate_new)+'</span>':'')
+    +mr('อัตราดอกเบี้ยใหม่',D.int_rate_new?'<span class="b">'+h(D.int_rate_new)+'</span>':'')
     +mr('ระยะเวลาผ่อนชำระจากอัตราผ่อนชำระเดิม',h(D.term_actual_old))
+    +mr('ระยะเวลาผ่อนชำระจากอัตราผ่อนชำระใหม่',D.term_remain_new?'<span class="b">'+h(D.term_remain_new)+'</span>':'')
     +mr('ระยะเวลาผ่อนชำระ',D.term_change?'<span class="b">'+h(D.term_change)+'</span>':'')
+    +mr('ค่างวดผ่อนชำระในปีที่ 2 และ 3',D.inst_y2y3?'<span class="b">'+h(D.inst_y2y3)+'</span>':'')
+    +mr('อัตราผ่อนชำระรวมภายหลังจาก 3 เดือน',D.inst_after_3m?'<span class="b">'+h(D.inst_after_3m)+'</span>':'')
     +mr('ดอกเบี้ยรวมตลอดสัญญา',h(D.int_total_change))
     +'</div>'+balloon
     +'<button type="button" class="action-btn" id="openBtn">ดูรายละเอียดและสมัคร</button>';
@@ -643,6 +652,11 @@ function accHTML(a,idx){
     +amr('ระยะเวลาผ่อนชำระ',a.term_change?'<span class="b">'+h(a.term_change)+'</span>':'')
     +amr('ค่างวดผ่อนชำระตามสัญญาเดิม',h(a.inst_old))
     +amr('ค่างวดผ่อนชำระ',a.inst_change?'<span class="b">'+h(a.inst_change)+'</span>':'')
+    +amr('ค่างวดผ่อนชำระในปีที่แรก',a.inst_change_y1?'<span class="b">'+h(a.inst_change_y1)+'</span>':'')
+    +amr('ค่างวดผ่อนชำระในปีที่ 2 และ 3',a.inst_y2y3?'<span class="b">'+h(a.inst_y2y3)+'</span>':'')
+    +amr('อัตราผ่อนชำระรวมภายหลังจาก 3 เดือน',a.inst_after_3m?'<span class="b">'+h(a.inst_after_3m)+'</span>':'')
+    +amr('อัตราการผ่อนชำระของสินเชื่อเพื่อเงินใหม่',a.inst_new_loan?'<span class="b">'+h(a.inst_new_loan)+'</span>':'')
+    +amr('ค่างวดชำระส่วนสุดท้ายหลังสิ้นสุดสัญญา',a.balloon_payment?'<span class="b">'+h(a.balloon_payment)+'</span>':'')
     +amr('ดอกเบี้ยรวมตลอดสัญญาตามสัญญาเดิม',h(a.int_total_old))
     +amr('ดอกเบี้ยรวมตลอดสัญญา',a.int_total_change?'<span class="b">'+h(a.int_total_change)+'</span>':'')
     +'</div>'+note+'</div>';
@@ -651,7 +665,7 @@ function detailHTML(){
   const badge=D.ncb_badge?'<div class="badge">'+h(D.ncb_badge)+'</div>':'';
   const notes=(D.notes||[]).map(n=>'<li>'+h(n)+'</li>').join('');
   return '<div class="detail-top"><div class="detail-heading">รายละเอียดมาตรการแยกตามบัญชี</div><div class="detail-sub">กรุณาตรวจสอบเงื่อนไขและผลกระทบของแต่ละบัญชีก่อนสมัคร</div></div>'
-    +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-id">'+h(D.plan_id)+'</span><div class="title">'+h(D.plan_desc)+'</div>'+badge+'</div></div>'
+    +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-id">'+h(D.plan_id)+'</span><div class="title">'+h(D.plan_desc)+'</div>'+badge+'<div class="status-badge">ข้อเสนอเบื้องต้น</div></div></div>'
     +'<div class="ss"><div class="ss-grid"><div class="ss-cell"><div class="ss-label">จำนวนบัญชีที่เข้าร่วม/พิจารณา</div><div class="ss-value">'+h(D.cnt_eligible)+'/'+h(D.cnt_total)+' บัญชี</div></div><div class="ss-cell"><div class="ss-label">ภาระหนี้คงเหลือรวม</div><div class="ss-value">'+h(D.total_os)+' บาท</div></div><div class="ss-cell"><div class="ss-label">ค่างวดรวมเดิม</div><div class="ss-value">'+h(D.prev_inst)+' บาท</div></div><div class="ss-cell"><div class="ss-label">ค่างวดรวมใหม่</div><div class="ss-value">'+h(D.new_inst)+' บาท</div></div></div></div>'
     +'<div class="accs"><div class="accs-title">รายละเอียดรายบัญชี</div>'+(D.account_details||[]).map((a,i)=>accHTML(a,i+1)).join('')+'</div>'
     +'<div class="section"><div class="section-title">เงื่อนไขสำคัญ</div><ul class="note-list"><li>ข้อเสนอนี้เป็นเพียงการประเมินเบื้องต้น มิได้เป็นการรับประกันหรือยืนยันการอนุมัติ</li>'+notes+'</ul></div>'

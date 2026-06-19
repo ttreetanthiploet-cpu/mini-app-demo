@@ -20,7 +20,7 @@ import type { SummaryData } from "@/components/intake/summary-card";
 
 // ─── Webhook & customer config ────────────────────────────────────────────────
 // customerId = cif (the database customer ID)
-const DEFAULT_CIF     = "121000239067";
+const DEFAULT_CIF     = "121000143468";
 const DEFAULT_SESSION_ID = "demo-session-001";
 const N8N_WEBHOOK_URL = "/api/chat";
 const AGENT_NAME      = "น้องฟิน";

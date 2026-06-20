@@ -498,6 +498,7 @@ function OfferCardFrame({
     const handler = (e: MessageEvent) => {
       if (e.data?.frameId !== frameId.current || !iframeRef.current) return;
       if (e.data.action === "resize") {
+        iframeRef.current.style.minHeight = "0";
         iframeRef.current.style.height = e.data.height + "px";
       } else if (e.data.action === "applyOffer") {
         onApply?.(entry);
@@ -662,11 +663,11 @@ function cardHTML(D,i){
     +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-desc-p1">'+ 'พิจารณาสินเชื่อเลขที่บัญชี ' + h(D.accounts)+'</span><div class="title">'+'</div>'+badge+'<div class="status-badge">ข้อเสนอเบื้องต้น</div></div></div>'
     +'<div class="highlight-box"><div class="before-after">ลดค่างวดรายเดือน'+h(D.step_label||'')+'</div><div class="price"><div class="old-price">'+h(D.prev_inst)+'</div><div class="arr">→</div><div><span class="after">'+h(D.new_inst)+'</span><span class="unit">บาท</span></div></div></div>'
     +'<div class="meta">'
-    +mr('ภาระหนี้คงเหลือรวม',D.total_os?h(D.total_os)+' บาท':'')
-    +mr('จำนวนงวด',term?'<span class="b">'+h(term)+'</span>':'')
-    +mr('ค่างวดผ่อนชำระในปีที่ 2 และ 3',D.inst_y2y3?'<span class="b">'+h(D.inst_y2y3)+'</span>':'')
-    +mr('อัตราผ่อนชำระรวมภายหลังจาก 3 เดือน',D.inst_after_3m?'<span class="b">'+h(D.inst_after_3m)+'</span>':'')
-    +mr('ดอกเบี้ยรวมตลอดสัญญา',h(D.int_total_change))
+    +mr('พิจารณาจากภาระหนี้คงเหลือรวม',D.total_os?h(D.total_os)+' บาท':'')
+    +mr('ปรับจำนวนงวด',term?'<span class="b">'+h(term)+'</span>':'')
+    +mr('ปรับค่างวดผ่อนชำระในปีที่ 2 และ 3',D.inst_y2y3?'<span class="b">'+h(D.inst_y2y3)+'</span>':'')
+    +mr('ภายหลังจาก 3 เดือนกลับมาผ่อนชำระที่อัตรา',D.inst_after_3m?'<span class="b">'+h(D.inst_after_3m)+'</span>':'')
+    +mr('การเปลี่ยนแปลงดอกเบี้ยรวมตลอดสัญญา',h(D.int_total_change))
     +'</div>'+ balloon
     +'<button type="button" class="action-btn" data-action="open" data-i="'+i+'">ดูรายละเอียดและสมัคร</button>'
     +'</div>';

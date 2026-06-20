@@ -488,6 +488,12 @@ function OfferCardFrame({
   const html = buildOfferCardHtml(entry.offerCard, frameId.current);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // NOTE: the iframe is sandbox="allow-scripts" (no allow-same-origin), so it
+  // always has an opaque origin. Reading iframe.contentDocument from here would
+  // throw a cross-origin SecurityError — there is no reliable parent-side
+  // fallback. Height is driven entirely by the postMessage('resize', ...) the
+  // iframe itself sends (see buildOffersHtml's ResizeObserver), which is the
+  // only mechanism that actually has access to the real layout size.
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.data?.frameId !== frameId.current || !iframeRef.current) return;
@@ -501,25 +507,11 @@ function OfferCardFrame({
     return () => window.removeEventListener("message", handler);
   }, [onApply, entry]);
 
-  const handleLoad = () => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    try {
-      const body = iframe.contentDocument?.body;
-      if (body) {
-        const setH = () => { iframe.style.height = body.scrollHeight + 24 + "px"; };
-        setH();
-        setTimeout(setH, 350);
-      }
-    } catch {}
-  };
-
   return (
     <iframe
       ref={iframeRef}
       srcDoc={html}
       sandbox="allow-scripts"
-      onLoad={handleLoad}
       style={{ width: "100%", border: "none", borderRadius: 16, minHeight: 480, display: "block" }}
     />
   );
@@ -528,9 +520,29 @@ function OfferCardFrame({
 // ─── Offer card HTML builder ──────────────────────────────────────────────────
 const ICON_URL = "https://cdn-icons-png.flaticon.com/512/3135/3135706.png";
 
-function buildOfferCardHtml(card: OfferCardData, frameId: string): string {
-  const D = card;
-  const dataJson = JSON.stringify(D);
+/**
+ * Renders one OR many offers in a single frame.
+ *
+ * Page 1 (list): original-style summary card — highlight price box + meta
+ *   rows (ภาระหนี้คงเหลือรวม, จำนวนงวด, ค่างวดผ่อนชำระในปีที่ 2 และ 3,
+ *   อัตราผ่อนชำระรวมภายหลังจาก 3 เดือน), a "มีค่างวดส่วนสุดท้าย" line when
+ *   applicable, and the "ดูรายละเอียดและสมัคร" button (1 click → detail+apply).
+ * Page 2 (detail): full offer overview + per-account breakdown + สมัคร.
+ *
+ * Empty ("") fields are automatically hidden (mr/amr return '' for falsy).
+ *
+ * postMessage: { action:'resize', height } / { action:'applyOffer', offerIndex, planId }
+ * Pass a single offer as [offer].
+ *
+ * Height sync: a ResizeObserver watches document.body and posts a fresh
+ * 'resize' height to the parent every time the rendered size actually
+ * changes (image load, font swap, view toggle, etc). This replaces the old
+ * fixed-delay timers, which could post a stale height if layout settled
+ * after the timer fired — that stale, oversized height is what produced the
+ * large blank gap below a card in the chat.
+ */
+function buildOffersHtml(cards: OfferCardData[], frameId: string): string {
+  const cardsJson = JSON.stringify(cards);
   return `<!DOCTYPE html>
 <html lang="th">
 <head>
@@ -540,13 +552,16 @@ function buildOfferCardHtml(card: OfferCardData, frameId: string): string {
 *{box-sizing:border-box}
 body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;display:flex;justify-content:center}
 .container{width:100%;max-width:400px}
-.card{width:100%;background:#fff;border-radius:16px;padding:12px;border:1px solid rgba(0,164,229,.12);box-shadow:0 4px 12px rgba(0,164,229,.08);overflow:hidden}
 .hidden{display:none!important}
+.card{width:100%;background:#fff;border-radius:16px;padding:12px;border:1px solid rgba(0,164,229,.12);box-shadow:0 4px 12px rgba(0,164,229,.08);overflow:hidden}
+#listView .card{margin-bottom:10px}
+#listView .card:last-child{margin-bottom:0}
 .header{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
 .icon{width:36px;height:36px;background:#E6F7FD;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .icon img{width:18px;height:18px}
 .title-wrap{flex:1;min-width:0}
 .plan-id{display:block;color:#9ca3af;font-size:10px;font-weight:700;margin-bottom:2px}
+.plan-desc-p1{display:block;color:#111827;font-size:10px;font-weight:700;margin-bottom:2px}
 .title{font-size:12px;line-height:1.4;color:#111827;font-weight:700;word-break:break-word}
 .badge{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:999px;background:#fff4e5;color:#b45309;font-size:9px;font-weight:700}
 .status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:#fefce8;color:#854d0e;font-size:9px;font-weight:700;border:1px solid #fde047;white-space:nowrap;margin-top:4px}
@@ -566,6 +581,7 @@ body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;displ
 .ml{font-size:11px;color:#6b7280;line-height:1.35;flex:1}
 .mv{font-size:11px;color:#111827;font-weight:700;text-align:right;line-height:1.35;word-break:break-word}
 .mv .b{color:#00A4E5}
+.balloon-line{margin-top:8px;padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;font-size:11px;font-weight:700;color:#374151}
 .final-box{margin-top:8px;padding:9px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px}
 .final-title{font-size:11px;font-weight:700;color:#111827;margin-bottom:6px}
 .final-list{display:flex;flex-direction:column;gap:5px}
@@ -575,7 +591,7 @@ body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;displ
 .fd .amt{color:#00A4E5;font-weight:700}
 .action-btn,.back-btn,.apply-btn{display:block;text-align:center;padding:11px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:none;text-decoration:none}
 .action-btn{width:100%;margin-top:10px;background:#00A4E5;color:#fff}
-.action-btn:hover{background:#0090CC}
+.action-btn:active{background:#0090CC}
 .detail-top{margin-bottom:12px}
 .detail-heading{font-size:14px;font-weight:700;color:#111827}
 .detail-sub{font-size:11px;color:#6b7280;margin-top:2px;line-height:1.4}
@@ -584,6 +600,8 @@ body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;displ
 .ss-cell{background:#fff;border-radius:10px;padding:8px;border:1px solid rgba(0,164,229,.15)}
 .ss-label{font-size:10px;color:#6b7280;margin-bottom:3px}
 .ss-value{font-size:12px;color:#111827;font-weight:700;word-break:break-word}
+.section{margin-top:12px;padding:10px;border:1px solid rgba(0,164,229,.15);border-radius:12px;background:#F8FCFF}
+.section-title{font-size:11px;font-weight:700;color:#111827;margin-bottom:8px}
 .accs{margin-top:12px}
 .accs-title{font-size:12px;font-weight:700;color:#111827;margin-bottom:8px}
 .acard{margin-top:10px;padding:12px;border:1px solid rgba(0,164,229,.20);background:#F8FCFF;border-radius:14px}
@@ -599,50 +617,62 @@ body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;displ
 .anote{margin-top:10px;padding:9px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px}
 .anote-title{font-size:10px;font-weight:700;color:#111827;margin-bottom:4px}
 .anote-text{font-size:10px;color:#6b7280;line-height:1.45;word-break:break-word}
-.section{margin-top:12px;padding:10px;border:1px solid rgba(0,164,229,.15);border-radius:12px;background:#F8FCFF}
-.section-title{font-size:11px;font-weight:700;color:#111827;margin-bottom:8px}
 .note-list{margin:0;padding-left:18px}
 .note-list li{font-size:11px;color:#4b5563;line-height:1.5;margin-bottom:4px}
 .btn-row{display:flex;gap:8px;margin-top:12px}
 .btn-row>*{flex:1 1 0}
 .back-btn{background:#fff;color:#00A4E5;border:1px solid rgba(0,164,229,.35)}
-.back-btn:hover{background:#F0FAFF}
+.back-btn:active{background:#F0FAFF}
 .apply-btn{background:#00A4E5;color:#fff;border:none}
-.apply-btn:hover{background:#0090CC}
+.apply-btn:active{background:#0090CC}
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="card" id="sv"></div>
-  <div class="card hidden" id="dv"></div>
+  <div id="listView"></div>
+  <div id="detailWrap"></div>
 </div>
 <script>
-const D=${dataJson};
+const CARDS=${cardsJson};
 const ICON="${ICON_URL}";
 const FID="${frameId}";
 const h=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function post(msg){window.parent.postMessage(Object.assign(msg,{frameId:FID}),'*');}
-function resize(){post({action:'resize',height:document.body.scrollHeight+24});}
-function mr(l,v){if(!v)return '';return '<div class="mr"><div class="ml">'+h(l)+'</div><div class="mv">'+v+'</div></div>';}
-function amr(l,v){if(!v)return '';return '<div class="amr"><div class="aml">'+h(l)+'</div><div class="amv">'+v+'</div></div>';}
-function summaryHTML(){
+function resize(){post({action:'resize',height:document.body.scrollHeight});}
+function mr(l,val){if(!val)return '';return '<div class="mr"><div class="ml">'+h(l)+'</div><div class="mv">'+val+'</div></div>';}
+function amr(l,val){if(!val)return '';return '<div class="amr"><div class="aml">'+h(l)+'</div><div class="amv">'+val+'</div></div>';}
+
+/* "มีค่างวดส่วนสุดท้ายต้องชำระในงวดที่ x, y, และ z" (งวด = middle field of each balloon row) */
+function balloonLine(D){
+  const raw=[];
+  (D.balloon_rows||[]).forEach(r=>{const g=(String(r).split('|')[1]||'').trim();if(g&&raw.indexOf(g)<0)raw.push(g);});
+  if(!raw.length)return '';
+  const e=raw.map(h);
+  const list=e.length===1?e[0]:e.length===2?e[0]+' และ '+e[1]:e.slice(0,-1).join(', ')+', และ '+e[e.length-1];
+  return 'มีค่างวดส่วนสุดท้ายต้องชำระในงวดที่ '+list;
+}
+
+/* ---------- summary card (page 1) ---------- */
+function cardHTML(D,i){
   const badge=D.ncb_badge?'<div class="badge">'+h(D.ncb_badge)+'</div>':'';
-  const balloon=(D.balloon_rows||[]).length?'<div class="final-box"><div class="final-title">ค่างวดส่วนสุดท้าย</div><div class="final-list">'+D.balloon_rows.map(r=>{const p=r.split('|');return '<div class="fi"><div class="fa">บัญชี '+h(p[0])+'</div><div class="fd">งวด '+h(p[1])+' • <span class="amt">'+h(p[2])+' บาท</span></div></div>';}).join('')+'</div></div>':'';
-  return '<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-id">'+h(D.plan_id)+'</span><div class="title">'+h(D.plan_desc)+'</div>'+badge+'<div class="status-badge">ข้อเสนอเบื้องต้น</div></div></div>'
-    +'<div class="account-bar"><div class="account-label">บัญชีที่พิจารณาเข้าร่วมมาตรการ</div><div class="account-value">'+h(D.accounts)+'</div></div>'
+  const term=D.term_remain_new||D.term_change||'';
+  const bl=balloonLine(D);
+  const balloon=bl?'<div class="balloon-line">'+bl+'</div>':'';
+  return '<div class="card" data-i="'+i+'">'
+    +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-desc-p1">'+ 'พิจารณาสินเชื่อเลขที่บัญชี ' + h(D.accounts)+'</span><div class="title">'+'</div>'+badge+'<div class="status-badge">ข้อเสนอเบื้องต้น</div></div></div>'
     +'<div class="highlight-box"><div class="before-after">ลดค่างวดรายเดือน'+h(D.step_label||'')+'</div><div class="price"><div class="old-price">'+h(D.prev_inst)+'</div><div class="arr">→</div><div><span class="after">'+h(D.new_inst)+'</span><span class="unit">บาท</span></div></div></div>'
-    +'<div class="meta"><div class="mr"><div class="ml">ภาระหนี้คงเหลือรวม</div><div class="mv">'+h(D.total_os)+' บาท</div></div>'
-    +mr('พิจารณาข้อเสนอ',h(D.source_desc))
-    +mr('อัตราดอกเบี้ยใหม่',D.int_rate_new?'<span class="b">'+h(D.int_rate_new)+'</span>':'')
-    +mr('ระยะเวลาผ่อนชำระจากอัตราผ่อนชำระเดิม',h(D.term_actual_old))
-    +mr('ระยะเวลาผ่อนชำระจากอัตราผ่อนชำระใหม่',D.term_remain_new?'<span class="b">'+h(D.term_remain_new)+'</span>':'')
-    +mr('ระยะเวลาผ่อนชำระ',D.term_change?'<span class="b">'+h(D.term_change)+'</span>':'')
+    +'<div class="meta">'
+    +mr('ภาระหนี้คงเหลือรวม',D.total_os?h(D.total_os)+' บาท':'')
+    +mr('จำนวนงวด',term?'<span class="b">'+h(term)+'</span>':'')
     +mr('ค่างวดผ่อนชำระในปีที่ 2 และ 3',D.inst_y2y3?'<span class="b">'+h(D.inst_y2y3)+'</span>':'')
     +mr('อัตราผ่อนชำระรวมภายหลังจาก 3 เดือน',D.inst_after_3m?'<span class="b">'+h(D.inst_after_3m)+'</span>':'')
     +mr('ดอกเบี้ยรวมตลอดสัญญา',h(D.int_total_change))
-    +'</div>'+balloon
-    +'<button type="button" class="action-btn" id="openBtn">ดูรายละเอียดและสมัคร</button>';
+    +'</div>'+ balloon
+    +'<button type="button" class="action-btn" data-action="open" data-i="'+i+'">ดูรายละเอียดและสมัคร</button>'
+    +'</div>';
 }
+
+/* ---------- per-account block (detail) ---------- */
 function accHTML(a,idx){
   const note=a.inelig_note?'<div class="anote"><div class="anote-title">หมายเหตุ</div><div class="anote-text">'+h(a.inelig_note)+'</div></div>':'';
   return '<div class="acard"><div class="achip">บัญชีที่ '+idx+'</div><div class="aname">'+h(a.acc_name)+'</div><div class="asub">เลขที่บัญชี '+h(a.acc_no)+'</div><div class="ameta">'
@@ -661,34 +691,82 @@ function accHTML(a,idx){
     +amr('ดอกเบี้ยรวมตลอดสัญญา',a.int_total_change?'<span class="b">'+h(a.int_total_change)+'</span>':'')
     +'</div>'+note+'</div>';
 }
-function detailHTML(){
+
+function detailHTML(D,i){
   const badge=D.ncb_badge?'<div class="badge">'+h(D.ncb_badge)+'</div>':'';
   const notes=(D.notes||[]).map(n=>'<li>'+h(n)+'</li>').join('');
-  return '<div class="detail-top"><div class="detail-heading">รายละเอียดมาตรการแยกตามบัญชี</div><div class="detail-sub">กรุณาตรวจสอบเงื่อนไขและผลกระทบของแต่ละบัญชีก่อนสมัคร</div></div>'
+  const balloon=(D.balloon_rows||[]).length
+    ?'<div class="final-box"><div class="final-title">ค่างวดส่วนสุดท้าย</div><div class="final-list">'
+      +D.balloon_rows.map(r=>{const p=r.split('|');return '<div class="fi"><div class="fa">บัญชี '+h(p[0])+'</div><div class="fd">งวด '+h(p[1])+' • <span class="amt">'+h(p[2])+' บาท</span></div></div>';}).join('')
+      +'</div></div>':'';
+  const overview='<div class="account-bar"><div class="account-label">บัญชีที่พิจารณาเข้าร่วมมาตรการ</div><div class="account-value">'+h(D.accounts)+'</div></div>'
+    +'<div class="meta">'
+    +mr('ภาระหนี้คงเหลือรวม',D.total_os?h(D.total_os)+' บาท':'')
+    +mr('พิจารณาข้อเสนอ',h(D.source_desc))
+    +mr('อัตราดอกเบี้ยใหม่',D.int_rate_new?'<span class="b">'+h(D.int_rate_new)+'</span>':'')
+    +mr('ระยะเวลาผ่อนชำระจากอัตราผ่อนชำระเดิม',h(D.term_actual_old))
+    +mr('ระยะเวลาผ่อนชำระจากอัตราผ่อนชำระใหม่',D.term_remain_new?'<span class="b">'+h(D.term_remain_new)+'</span>':'')
+    +mr('ระยะเวลาผ่อนชำระ',D.term_change?'<span class="b">'+h(D.term_change)+'</span>':'')
+    +mr('ค่างวดผ่อนชำระในปีที่ 2 และ 3',D.inst_y2y3?'<span class="b">'+h(D.inst_y2y3)+'</span>':'')
+    +mr('อัตราผ่อนชำระรวมภายหลังจาก 3 เดือน',D.inst_after_3m?'<span class="b">'+h(D.inst_after_3m)+'</span>':'')
+    +mr('ดอกเบี้ยรวมตลอดสัญญา',h(D.int_total_change))
+    +'</div>'+balloon;
+  return '<div class="card detailView hidden" data-i="'+i+'">'
+    +'<div class="detail-top"><div class="detail-heading">รายละเอียดมาตรการแยกตามบัญชี</div><div class="detail-sub">กรุณาตรวจสอบเงื่อนไขและผลกระทบของแต่ละบัญชีก่อนสมัคร</div></div>'
     +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-id">'+h(D.plan_id)+'</span><div class="title">'+h(D.plan_desc)+'</div>'+badge+'<div class="status-badge">ข้อเสนอเบื้องต้น</div></div></div>'
     +'<div class="ss"><div class="ss-grid"><div class="ss-cell"><div class="ss-label">จำนวนบัญชีที่เข้าร่วม/พิจารณา</div><div class="ss-value">'+h(D.cnt_eligible)+'/'+h(D.cnt_total)+' บัญชี</div></div><div class="ss-cell"><div class="ss-label">ภาระหนี้คงเหลือรวม</div><div class="ss-value">'+h(D.total_os)+' บาท</div></div><div class="ss-cell"><div class="ss-label">ค่างวดรวมเดิม</div><div class="ss-value">'+h(D.prev_inst)+' บาท</div></div><div class="ss-cell"><div class="ss-label">ค่างวดรวมใหม่</div><div class="ss-value">'+h(D.new_inst)+' บาท</div></div></div></div>'
-    +'<div class="accs"><div class="accs-title">รายละเอียดรายบัญชี</div>'+(D.account_details||[]).map((a,i)=>accHTML(a,i+1)).join('')+'</div>'
+    +'<div class="section"><div class="section-title">ภาพรวมข้อเสนอ</div>'+overview+'</div>'
+    +'<div class="accs"><div class="accs-title">รายละเอียดรายบัญชี</div>'+(D.account_details||[]).map((a,k)=>accHTML(a,k+1)).join('')+'</div>'
     +'<div class="section"><div class="section-title">เงื่อนไขสำคัญ</div><ul class="note-list"><li>ข้อเสนอนี้เป็นเพียงการประเมินเบื้องต้น มิได้เป็นการรับประกันหรือยืนยันการอนุมัติ</li>'+notes+'</ul></div>'
-    +'<div class="btn-row"><button type="button" class="back-btn" id="backBtn">ย้อนกลับ</button><button type="button" class="apply-btn" id="applyBtn">สมัคร</button></div>';
+    +'<div class="btn-row"><button type="button" class="back-btn" data-action="back" data-i="'+i+'">ย้อนกลับ</button><button type="button" class="apply-btn" data-action="apply" data-i="'+i+'">สมัคร</button></div>'
+    +'</div>';
 }
-const sv=document.getElementById('sv');
-const dv=document.getElementById('dv');
-sv.innerHTML=summaryHTML();
-dv.innerHTML=detailHTML();
-document.getElementById('openBtn').addEventListener('click',()=>{
-  sv.classList.add('hidden');dv.classList.remove('hidden');
+
+/* ---------- render ---------- */
+const listView=document.getElementById('listView');
+const detailWrap=document.getElementById('detailWrap');
+listView.innerHTML=CARDS.map(cardHTML).join('');
+detailWrap.innerHTML=CARDS.map(detailHTML).join('');
+
+function detail(i){return detailWrap.querySelector('.detailView[data-i="'+i+'"]');}
+function openDetail(i){
+  listView.classList.add('hidden');
+  detailWrap.querySelectorAll('.detailView').forEach(d=>d.classList.add('hidden'));
+  detail(i).classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
-  setTimeout(resize,50);
-});
-document.getElementById('backBtn').addEventListener('click',()=>{
-  dv.classList.add('hidden');sv.classList.remove('hidden');
+  resize();
+}
+function backDetail(i){
+  detail(i).classList.add('hidden');
+  listView.classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
-  setTimeout(resize,50);
+  resize();
+}
+function applyOffer(i){post({action:'applyOffer',offerIndex:i,planId:CARDS[i]&&CARDS[i].plan_id});}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-action]');
+  if(!t)return;
+  const i=parseInt(t.getAttribute('data-i'),10);
+  switch(t.getAttribute('data-action')){
+    case 'open':openDetail(i);break;
+    case 'back':backDetail(i);break;
+    case 'apply':applyOffer(i);break;
+  }
 });
-document.getElementById('applyBtn').addEventListener('click',()=>{
-  post({action:'applyOffer'});
-});
+
+/* Continuously watch the actual rendered size of the document and report it
+   to the parent whenever it changes (image/font load, view toggle, etc).
+   This replaces brittle fixed-delay timers and is what fixes the stale,
+   oversized iframe height that produced the gap between offer cards. */
+resize();
+new ResizeObserver(()=>resize()).observe(document.body);
 </script>
 </body>
 </html>`;
+}
+
+/** Back-compat helper if some call sites still pass a single offer. */
+function buildOfferCardHtml(card: OfferCardData, frameId: string): string {
+  return buildOffersHtml([card], frameId);
 }

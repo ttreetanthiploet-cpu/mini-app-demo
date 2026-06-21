@@ -1,7 +1,29 @@
 import fs from "fs";
 import path from "path";
 
-const DB_DIR = path.join(process.cwd(), "database");
+// Bundled, read-only seed directory (the committed `database/` folder).
+const READ_DIR = path.join(process.cwd(), "database");
+
+// On Vercel (and similar serverless hosts) the deployment filesystem is
+// read-only — only `/tmp` is writable. Route mutable tables there; locally we
+// keep using the project dir so dev behaves as before.
+const IS_READONLY_FS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const WRITE_DIR = IS_READONLY_FS ? "/tmp/database" : READ_DIR;
+
+// Tables that get written to at runtime. Everything else is read-only seed data.
+const WRITABLE_FILES = new Set([
+  "conversation.json",
+  "session_info.json",
+  "restructure_offer_summary.json",
+  "restructure_offer_account.json",
+  "staff_escalation_info.json",
+]);
+
+/** Resolve a table to its on-disk path: writable tables live in WRITE_DIR. */
+function dataPath(jsonFile: string): string {
+  const dir = WRITABLE_FILES.has(jsonFile) ? WRITE_DIR : READ_DIR;
+  return path.join(dir, jsonFile);
+}
 
 // ── CSV parser (handles quoted fields, embedded newlines, BOM) ────────────────
 function parseCSV(raw: string): Record<string, string>[] {
@@ -135,17 +157,28 @@ let initialised = false;
 
 function ensureJsonFiles(): void {
   if (initialised) return;
+  if (WRITE_DIR !== READ_DIR && !fs.existsSync(WRITE_DIR)) {
+    fs.mkdirSync(WRITE_DIR, { recursive: true });
+  }
   for (const cfg of TABLE_CONFIG) {
-    const jsonPath = path.join(DB_DIR, cfg.jsonFile);
-    if (!fs.existsSync(jsonPath)) {
-      const csvPath = path.join(DB_DIR, cfg.csvFile);
-      if (fs.existsSync(csvPath)) {
-        const raw = fs.readFileSync(csvPath, "utf-8");
-        const rows = parseCSV(raw).map((r) => applyColumnMap(r, cfg.columnMap));
-        fs.writeFileSync(jsonPath, JSON.stringify(rows, null, 2), "utf-8");
-      } else {
-        fs.writeFileSync(jsonPath, "[]", "utf-8");
-      }
+    const target = dataPath(cfg.jsonFile);
+    if (fs.existsSync(target)) continue;
+
+    // Seed writable tables from the committed bundle copy when present.
+    const bundled = path.join(READ_DIR, cfg.jsonFile);
+    if (target !== bundled && fs.existsSync(bundled)) {
+      fs.writeFileSync(target, fs.readFileSync(bundled, "utf-8"), "utf-8");
+      continue;
+    }
+
+    // Otherwise build from CSV, falling back to an empty table.
+    const csvPath = path.join(READ_DIR, cfg.csvFile);
+    if (fs.existsSync(csvPath)) {
+      const raw = fs.readFileSync(csvPath, "utf-8");
+      const rows = parseCSV(raw).map((r) => applyColumnMap(r, cfg.columnMap));
+      fs.writeFileSync(target, JSON.stringify(rows, null, 2), "utf-8");
+    } else {
+      fs.writeFileSync(target, "[]", "utf-8");
     }
   }
   initialised = true;
@@ -155,7 +188,7 @@ function ensureJsonFiles(): void {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function readJson<T = any>(jsonFile: string): T[] {
   ensureJsonFiles();
-  const fp = path.join(DB_DIR, jsonFile);
+  const fp = dataPath(jsonFile);
   if (!fs.existsSync(fp)) return [];
   return JSON.parse(fs.readFileSync(fp, "utf-8")) as T[];
 }
@@ -163,7 +196,7 @@ function readJson<T = any>(jsonFile: string): T[] {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function writeJson<T = any>(jsonFile: string, data: T[]): void {
   ensureJsonFiles();
-  fs.writeFileSync(path.join(DB_DIR, jsonFile), JSON.stringify(data, null, 2), "utf-8");
+  fs.writeFileSync(dataPath(jsonFile), JSON.stringify(data, null, 2), "utf-8");
 }
 
 function maxId(rows: Record<string, unknown>[]): number {

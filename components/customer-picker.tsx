@@ -14,7 +14,18 @@ export default function CustomerPicker({ onStart }: { onStart: (cif: string, ses
   const [selected, setSelected] = useState<Customer | null>(null);
   const [open, setOpen] = useState(false);
   const [sessionId, setSessionId] = useState(randomSessionId);
+  const [resetting, setResetting] = useState(false);
   const comboRef = useRef<HTMLDivElement>(null);
+
+  const handleReset = useCallback(async () => {
+    if (resetting) return;
+    setResetting(true);
+    try {
+      await fetch("/api/reset", { method: "POST" });
+    } finally {
+      setResetting(false);
+    }
+  }, [resetting]);
 
   useEffect(() => {
     fetch("/api/customers")
@@ -259,6 +270,30 @@ export default function CustomerPicker({ onStart }: { onStart: (cif: string, ses
         >
           เริ่มต้นการสนทนา
         </button>
+
+        {/* Reset history */}
+        <div style={{ textAlign: "center" }}>
+          <button
+            onClick={handleReset}
+            disabled={resetting}
+            style={{
+              background: "none",
+              border: "none",
+              fontFamily: "inherit",
+              fontSize: 12,
+              color: "var(--muted)",
+              cursor: resetting ? "not-allowed" : "pointer",
+              padding: "6px 10px",
+              borderRadius: 8,
+              opacity: resetting ? 0.5 : 1,
+              transition: "color 0.15s, background 0.15s",
+            }}
+            onMouseEnter={e => { if (!resetting) { (e.currentTarget as HTMLButtonElement).style.color = "#e53e3e"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(229,62,62,0.07)"; } }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--muted)"; (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+          >
+            {resetting ? "กำลังล้างประวัติ..." : "ล้างประวัติการสนทนา"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -5,9 +5,10 @@ interface BubbleProps {
   kind: "bot" | "user" | "agent";
   text: string;
   time: string;
+  agentUsed?: string;
 }
 
-export default function Bubble({ kind, text, time }: BubbleProps) {
+export default function Bubble({ kind, text, time, agentUsed }: BubbleProps) {
   const isUser = kind === "user";
   const avatar = kind === "agent" ? <AgentAvatar size={28} /> : <BotAvatar size={28} />;
 
@@ -16,7 +17,10 @@ export default function Bubble({ kind, text, time }: BubbleProps) {
       {!isUser && <div className="avatar-slot">{avatar}</div>}
       <div>
         <div className={`bubble ${kind}`}>{text}</div>
-        <div className="msg-time">{time}</div>
+        <div className="msg-time">
+          {agentUsed && <span className="agent-used">{agentUsed} · </span>}
+          {time}
+        </div>
       </div>
     </div>
   );

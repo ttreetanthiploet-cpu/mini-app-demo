@@ -27,7 +27,7 @@ const AGENT_NAME      = "น้องฟิน";
 
 // ─── Message type union ───────────────────────────────────────────────────────
 type MsgBase = { id: number };
-type TextMsg     = MsgBase & { type: "user" | "bot" | "agent"; text: string; time: string };
+type TextMsg     = MsgBase & { type: "user" | "bot" | "agent"; text: string; time: string; agentUsed?: string };
 type TypingMsg   = MsgBase & { type: "typing"; who: "bot" | "agent" };
 type ChipsMsg    = MsgBase & { type: "chips"; items: ChipItem[] };
 type ActionsMsg  = MsgBase & { type: "actions" };
@@ -175,33 +175,44 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
 
         setMessages((p) => p.filter((m) => m.id !== tid));
 
-        const replyType = (reply.type ?? "").toLowerCase();
+        const agentUsed: string = reply.agentUsed ?? "Bot";
+        const replyMsgs: Array<{ type?: string; content?: string }> =
+          Array.isArray(reply.replyMessage) ? reply.replyMessage : [];
 
-        if (replyType === "json") {
-          const raw = reply.replyMessage ?? reply.content ?? "[]";
-          const items: OfferCardEntry[] =
-            typeof raw === "string" ? JSON.parse(raw) : raw;
-          const offerCards = items.filter(
-            (item) => (item.jsonType ?? "").toLowerCase() === "offercard"
-          );
-          if (offerCards.length > 0) {
-            add({ type: "offerCards", cards: offerCards });
-            add({
-              type: "chips",
-              items: [
-                { label: "ดูข้อเสนออื่น", act: "free", text: "ขอดูข้อเสนออื่นเพิ่มเติม" },
-                { label: "อยากผ่อนน้อยกว่านี้", act: "free", text: "ต้องการค่างวดที่น้อยกว่านี้" },
-                { label: "อยากผ่อนมากกว่านี้", act: "free", text: "ยอมผ่อนมากขึ้นเพื่อปิดหนี้เร็วขึ้น" },
-              ],
-            });
-          }
-        } else {
-          const text =
-            reply.replyMessage ?? reply.content ?? reply.message ??
-            "ขออภัย ไม่สามารถตอบได้ในขณะนี้ค่ะ";
+        if (replyMsgs.length === 0) {
+          // Fallback for unexpected response shape
           setMessages((p) =>
-            p.concat({ id: nid(), type: "bot", text, time: nowTime() } as TextMsg)
+            p.concat({ id: nid(), type: "bot", text: "ขออภัย ไม่สามารถตอบได้ในขณะนี้ค่ะ", time: nowTime(), agentUsed } as TextMsg)
           );
+        }
+
+        for (const msg of replyMsgs) {
+          const msgType = (msg.type ?? "").toLowerCase();
+
+          if (msgType === "json") {
+            const raw = msg.content ?? "[]";
+            const items: OfferCardEntry[] =
+              typeof raw === "string" ? JSON.parse(raw) : raw;
+            const offerCards = items.filter(
+              (item) => (item.jsonType ?? "").toLowerCase() === "offercard"
+            );
+            if (offerCards.length > 0) {
+              add({ type: "offerCards", cards: offerCards });
+              add({
+                type: "chips",
+                items: [
+                  { label: "ดูข้อเสนออื่น", act: "free", text: "ขอดูข้อเสนออื่นเพิ่มเติม" },
+                  { label: "อยากผ่อนน้อยกว่านี้", act: "free", text: "ต้องการค่างวดที่น้อยกว่านี้" },
+                  { label: "อยากผ่อนมากกว่านี้", act: "free", text: "ยอมผ่อนมากขึ้นเพื่อปิดหนี้เร็วขึ้น" },
+                ],
+              });
+            }
+          } else {
+            const text = msg.content ?? "ขออภัย ไม่สามารถตอบได้ในขณะนี้ค่ะ";
+            setMessages((p) =>
+              p.concat({ id: nid(), type: "bot", text, time: nowTime(), agentUsed } as TextMsg)
+            );
+          }
         }
       } catch (err) {
         console.error("Webhook error:", err);
@@ -401,6 +412,7 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
     setBusy(false);
   }, []);
 
+
   // ─── Render ────────────────────────────────────────────────────────────────
   const renderMsg = useCallback(
     (m: Message) => {
@@ -408,7 +420,7 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
         case "user":
         case "bot":
         case "agent":
-          return <Bubble key={m.id} kind={m.type} text={m.text} time={m.time} />;
+          return <Bubble key={m.id} kind={m.type} text={m.text} time={m.time} agentUsed={m.agentUsed} />;
         case "typing":
           return <TypingIndicator key={m.id} who={m.who} />;
         case "chips":

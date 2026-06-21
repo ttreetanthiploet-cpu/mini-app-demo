@@ -161,26 +161,24 @@ export async function POST(request: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const output: any = Array.isArray(rawOutput) ? rawOutput[0] : rawOutput;
 
-  // 6. Record BOT reply in conversation
-  const replyContent: string = output.replyMessage ?? output.content ?? "";
-  appendConversation({
-    sessionId,
-    role: "BOT",
-    content: replyContent,
-    agentUsed: output.agentUsed ?? "Bot",
-    type: output.type ?? "text",
-  });
+  // 6. Record BOT replies in conversation (replyMessage is now an array of {type, content})
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const replyMessages: any[] = Array.isArray(output.replyMessage) ? output.replyMessage : [];
+  for (const msg of replyMessages) {
+    appendConversation({
+      sessionId,
+      role: "BOT",
+      content: msg.content ?? "",
+      agentUsed: output.agentUsed ?? "Bot",
+      type: (msg.type ?? "text").toLowerCase(),
+    });
+  }
 
-  // 7. Upsert sessionInfo — always write so every session has a record.
-  //    If n8n returned sessionInfo, use its values; otherwise just create/touch the entry.
+  // 7. Upsert sessionInfo — sessionState is now a plain object (not an array).
   {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const nsi: any =
-      Array.isArray(output.sessionInfo) && output.sessionInfo.length > 0
-        ? output.sessionInfo[0]
-        : null;
+    const nsi: any = output.sessionState ?? null;
 
-    // Build update object with only the fields n8n actually provided
     const update: Record<string, unknown> = {};
     if (nsi?.consultAcc != null || nsi?.considerAccount != null)
       update.considerAccount = nsi.consultAcc ?? nsi.considerAccount;

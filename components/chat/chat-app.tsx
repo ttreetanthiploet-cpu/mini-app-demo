@@ -92,12 +92,11 @@ export interface AccountDetailData {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function ChatApp() {
+export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION_ID }: { cif?: string; sessionId?: string } = {}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [mode, setMode] = useState<"bot" | "agent">("bot");
   const [busy, setBusy] = useState(false);
-  const sessionId = DEFAULT_SESSION_ID; // In production, this would come from server/session management
-  const customerId = DEFAULT_CIF;
+  const customerId = cif;
   const idRef     = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
 

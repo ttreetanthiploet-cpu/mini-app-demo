@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test_case_generation
+*database_rewrite_state*
 
 # next.js
 /.next/

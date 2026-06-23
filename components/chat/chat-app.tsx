@@ -573,7 +573,7 @@ body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;displ
 .icon img{width:18px;height:18px}
 .title-wrap{flex:1;min-width:0}
 .plan-id{display:block;color:#9ca3af;font-size:10px;font-weight:700;margin-bottom:2px}
-.plan-desc-p1{display:block;color:#111827;font-size:10px;font-weight:700;margin-bottom:2px}
+.plan-desc-p1{display:block;color:#3e5878;font-size:11px;font-weight:700;margin-bottom:2px}
 .title{font-size:12px;line-height:1.4;color:#111827;font-weight:700;word-break:break-word}
 .badge{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:999px;background:#fff4e5;color:#b45309;font-size:9px;font-weight:700}
 .status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:#fefce8;color:#854d0e;font-size:9px;font-weight:700;border:1px solid #fde047;white-space:nowrap;margin-top:4px}
@@ -671,9 +671,10 @@ function cardHTML(D,i){
   const bl=balloonLine(D);
   const balloon=bl?'<div class="balloon-line">'+bl+'</div>':'';
   return '<div class="card" data-i="'+i+'">'
-    +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-desc-p1">'+ 'พิจารณาสินเชื่อเลขที่บัญชี ' + h(D.accounts)+'</span><div class="title">'+'</div>'+badge+'<div class="status-badge">ข้อเสนอเบื้องต้น</div></div></div>'
+    +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-desc-p1">'+ 'Plan ID :  ' + h(D.plan_id) + '</span><div class="title">'+'</div>'+'<div class="status-badge">เป็นข้อเสนอเบื้องต้นเท่านั้น</div>' + ' ' +badge+'</div></div>' 
     +'<div class="highlight-box"><div class="before-after">ลดค่างวดรายเดือน'+h(D.step_label||'')+'</div><div class="price"><div class="old-price">'+h(D.prev_inst)+'</div><div class="arr">→</div><div><span class="after">'+h(D.new_inst)+'</span><span class="unit">บาท</span></div></div></div>'
     +'<div class="meta">'
+    +mr('บัญชีที่พิจารณา',D.accounts?h(D.accounts):'')
     +mr('พิจารณาจากภาระหนี้คงเหลือรวม',D.total_os?h(D.total_os)+' บาท':'')
     +mr('ปรับจำนวนงวด',term?'<span class="b">'+h(term)+'</span>':'')
     +mr('ปรับค่างวดผ่อนชำระในปีที่ 2 และ 3',D.inst_y2y3?'<span class="b">'+h(D.inst_y2y3)+'</span>':'')

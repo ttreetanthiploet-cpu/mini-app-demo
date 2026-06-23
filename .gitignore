@@ -12,7 +12,7 @@
 
 # testing
 /coverage
-/test_case_generation
+*test_case*
 *database_rewrite_state*
 
 # next.js

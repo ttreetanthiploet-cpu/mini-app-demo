@@ -1,13 +1,1 @@
-[
-  {
-    "id": 1,
-    "considerAccount": "xxxxxx503379",
-    "maxTerm": 360,
-    "maxPayment": 5000,
-    "preference": "{\"DebtSituation\":\"DebtBurden\"}",
-    "narrative": "The user wants to restructure their personal loan. This is a request for a personalized financial plan, so the conversation is being routed to the advisor.",
-    "sessionId": "session-549725",
-    "createdAt": "2026-06-21T08:53:31.236Z",
-    "updatedAt": "2026-06-21T08:53:31.236Z"
-  }
-]
+[]

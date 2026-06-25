@@ -107,6 +107,11 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
+  const scrollToBottom = useCallback(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
+
   const nid = () => idRef.current++;
 
   const add = useCallback((m: MsgInit): number => {
@@ -440,12 +445,12 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
             <IntakeForm key={m.id} onSubmit={onFormSubmit} />
           );
         case "offerCards":
-          return <OfferCardsBlock key={m.id} cards={m.cards} onApply={applyOffer} />;
+          return <OfferCardsBlock key={m.id} cards={m.cards} onApply={applyOffer} onLayout={scrollToBottom} />;
         default:
           return null;
       }
     },
-    [onChip, onAction, onFormSubmit, applyOffer]
+    [onChip, onAction, onFormSubmit, applyOffer, scrollToBottom]
   );
 
   return (
@@ -479,17 +484,25 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
 function OfferCardsBlock({
   cards,
   onApply,
+  onLayout,
 }: {
   cards: OfferCardEntry[];
   onApply?: (entry: OfferCardEntry) => void;
+  onLayout?: () => void;
 }) {
+  const readyCount = useRef(0);
+  const onFrameReady = useCallback(() => {
+    readyCount.current++;
+    if (readyCount.current >= cards.length) onLayout?.();
+  }, [cards.length, onLayout]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div className="sys-divider">
         <span>จากความต้องการ น้องฟินมีข้อเสนอ {cards.length} แผนให้พิจารณาค่ะ</span>
       </div>
       {cards.map((entry) => (
-        <OfferCardFrame key={entry.planId} entry={entry} onApply={onApply} />
+        <OfferCardFrame key={entry.planId} entry={entry} onApply={onApply} onFirstReady={onFrameReady} />
       ))}
     </div>
   );
@@ -498,13 +511,16 @@ function OfferCardsBlock({
 function OfferCardFrame({
   entry,
   onApply,
+  onFirstReady,
 }: {
   entry: OfferCardEntry;
   onApply?: (entry: OfferCardEntry) => void;
+  onFirstReady?: () => void;
 }) {
   const frameId = useRef(`f${Math.random().toString(36).slice(2)}`);
   const html = buildOfferCardHtml(entry.offerCard, frameId.current);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const hasReported = useRef(false);
 
   // NOTE: the iframe is sandbox="allow-scripts" (no allow-same-origin), so it
   // always has an opaque origin. Reading iframe.contentDocument from here would
@@ -518,20 +534,24 @@ function OfferCardFrame({
       if (e.data.action === "resize") {
         iframeRef.current.style.minHeight = "0";
         iframeRef.current.style.height = e.data.height + "px";
+        if (!hasReported.current) {
+          hasReported.current = true;
+          onFirstReady?.();
+        }
       } else if (e.data.action === "applyOffer") {
         onApply?.(entry);
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [onApply, entry]);
+  }, [onApply, entry, onFirstReady]);
 
   return (
     <iframe
       ref={iframeRef}
       srcDoc={html}
       sandbox="allow-scripts"
-      style={{ width: "100%", border: "none", borderRadius: 16, minHeight: 480, display: "block" }}
+      style={{ width: "100%", border: "none", borderRadius: 16, minHeight: 380, display: "block" }}
     />
   );
 }
@@ -569,6 +589,7 @@ function buildOffersHtml(cards: OfferCardData[], frameId: string): string {
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <style>
 *{box-sizing:border-box}
+html{overflow:hidden}
 body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;display:flex;justify-content:center}
 .container{width:100%;max-width:400px}
 .hidden{display:none!important}
@@ -601,6 +622,9 @@ body{margin:0;padding:12px;font-family:Arial,sans-serif;background:#EAF7FD;displ
 .mv{font-size:11px;color:#111827;font-weight:700;text-align:right;line-height:1.35;word-break:break-word}
 .mv .b{color:#00A4E5}
 .balloon-line{margin-top:8px;padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;font-size:11px;font-weight:700;color:#374151}
+.hx-extra{text-align:left;display:flex;flex-direction:column;gap:6px;margin-top:10px;padding:10px;background:rgba(255,255,255,.65);border-radius:10px}
+.hx-extra .mv .b{color:#4b5563}
+.hx-extra .balloon-line{background:none;border:none;padding:0;margin-top:0;font-size:10px;color:#6b7280;font-weight:400}
 .final-box{margin-top:8px;padding:9px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px}
 .final-title{font-size:11px;font-weight:700;color:#111827;margin-bottom:6px}
 .final-list{display:flex;flex-direction:column;gap:5px}
@@ -668,7 +692,7 @@ function balloonLine(D){
   if(!raw.length)return '';
   const e=raw.map(h);
   const list=e.length===1?e[0]:e.length===2?e[0]+' และ '+e[1]:e.slice(0,-1).join(', ')+', และ '+e[e.length-1];
-  return 'มีค่างวดส่วนสุดท้ายต้องชำระในงวดที่ '+list;
+  return 'มีค่างวดส่วนสุดท้ายงวดที่ '+list;
 }
 
 /* ---------- summary card (page 1) ---------- */
@@ -677,17 +701,20 @@ function cardHTML(D,i){
   const term=D.term_remain_new||D.term_change||'';
   const bl=balloonLine(D);
   const balloon=bl?'<div class="balloon-line">'+bl+'</div>':'';
+  const y2y3=mr('ค่างวดผ่อนชำระในปีที่ 2 และ 3',D.inst_y2y3?'<span class="b">'+h(D.inst_y2y3)+'</span>':'');
+  const after3m=mr('ภายหลังจาก 3 เดือนกลับมาผ่อนชำระที่อัตรา',D.inst_after_3m?'<span class="b">'+h(D.inst_after_3m)+'</span>':'');
+  const hxExtra=(y2y3||after3m||balloon)?'<div class="hx-extra">'+y2y3+after3m+balloon+'</div>':'';
   return '<div class="card" data-i="'+i+'">'
-    +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-desc-p1">'+ 'Plan ID :  ' + h(D.plan_id) + '</span><div class="title">'+'</div>'+'<div class="status-badge">เป็นข้อเสนอเบื้องต้นเท่านั้น</div>' + ' ' +badge+'</div></div>' 
-    +'<div class="highlight-box"><div class="before-after">ลดค่างวดรายเดือน'+h(D.step_label||'')+'</div><div class="price"><div class="old-price">'+h(D.prev_inst)+'</div><div class="arr">→</div><div><span class="after">'+h(D.new_inst)+'</span><span class="unit">บาท</span></div></div></div>'
+    +'<div class="header"><div class="icon"><img src="'+ICON+'" alt=""></div><div class="title-wrap"><span class="plan-desc-p1">'+ 'Plan ID :  ' + h(D.plan_id) + '</span><div class="title">'+'</div>'+'<div class="status-badge">เป็นข้อเสนอเบื้องต้นเท่านั้น</div>' + ' ' +badge+'</div></div>'
+    +'<div class="highlight-box"><div class="before-after">ลดค่างวดรายเดือน'+h(D.step_label||'')+'</div><div class="price"><div class="old-price">'+h(D.prev_inst)+'</div><div class="arr">→</div><div><span class="after">'+h(D.new_inst)+'</span><span class="unit">บาท</span></div></div>'
+    +hxExtra
+    +'</div>'
     +'<div class="meta">'
     +mr('บัญชีที่พิจารณา',D.accounts?h(D.accounts):'')
     +mr('พิจารณาจากภาระหนี้คงเหลือรวม',D.total_os?h(D.total_os)+' บาท':'')
     +mr('ปรับจำนวนงวด',term?'<span class="b">'+h(term)+'</span>':'')
-    +mr('ปรับค่างวดผ่อนชำระในปีที่ 2 และ 3',D.inst_y2y3?'<span class="b">'+h(D.inst_y2y3)+'</span>':'')
-    +mr('ภายหลังจาก 3 เดือนกลับมาผ่อนชำระที่อัตรา',D.inst_after_3m?'<span class="b">'+h(D.inst_after_3m)+'</span>':'')
     +mr('การเปลี่ยนแปลงดอกเบี้ยรวมตลอดสัญญา',h(D.int_total_change))
-    +'</div>'+ balloon
+    +'</div>'
     +'<button type="button" class="action-btn" data-action="open" data-i="'+i+'">ดูรายละเอียดและสมัคร</button>'
     +'</div>';
 }
@@ -779,8 +806,8 @@ document.addEventListener('click',e=>{
    to the parent whenever it changes (image/font load, view toggle, etc).
    This replaces brittle fixed-delay timers and is what fixes the stale,
    oversized iframe height that produced the gap between offer cards. */
-resize();
-new ResizeObserver(()=>resize()).observe(document.body);
+let _rt;
+new ResizeObserver(()=>{clearTimeout(_rt);_rt=setTimeout(resize,50);}).observe(document.body);
 </script>
 </body>
 </html>`;

@@ -1,6 +1,6 @@
 import BotAvatar from "@/components/bot-avatar";
 import AgentAvatar from "@/components/agent-avatar";
-import { IcBack, IcVerify, IcReset } from "@/components/icons";
+import { IcBack, IcVerify, IcReset, IcRequests } from "@/components/icons";
 
 const BOT_NAME = "น้องฟิน";
 const AGENT_NAME = "เจ้าหน้าที่ ณัฐพล";
@@ -9,9 +9,10 @@ type HeaderProps = {
   mode: "bot" | "agent";
   onBack: () => void;
   onReset: () => void;
+  onViewRequests: () => void;
 };
 
-export default function Header({ mode, onBack, onReset }: HeaderProps) {
+export default function Header({ mode, onBack, onReset, onViewRequests }: HeaderProps) {
   const isAgent = mode === "agent";
   return (
     <div className="chat-header">
@@ -37,6 +38,14 @@ export default function Header({ mode, onBack, onReset }: HeaderProps) {
           </div>
         </div>
       </div>
+      <button
+        className="hdr-requests-pill"
+        aria-label="ดูคำขอของฉัน"
+        onClick={onViewRequests}
+      >
+        <IcRequests />
+        <span>คำขอ</span>
+      </button>
       <button
         className="hdr-btn"
         aria-label="เริ่มใหม่"

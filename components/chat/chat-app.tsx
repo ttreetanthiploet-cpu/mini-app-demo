@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { nowTime, sleep } from "@/lib/utils";
 import Header from "./header";
+import RequestsDrawer from "./requests-drawer";
 import Welcome from "./welcome";
 import InputBar from "./input-bar";
 import Bubble from "@/components/messages/bubble";
@@ -96,6 +97,7 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
   const [messages, setMessages] = useState<Message[]>([]);
   const [mode, setMode] = useState<"bot" | "agent">("bot");
   const [busy, setBusy] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
   const customerId = cif;
   const idRef     = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -448,7 +450,7 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
 
   return (
     <div className="chat-screen">
-      <Header mode={mode} onBack={reset} onReset={reset} />
+      <Header mode={mode} onBack={reset} onReset={reset} onViewRequests={() => setShowRequests(true)} />
       <div className="chat-scroll" ref={scrollRef}>
         {messages.length === 0 ? (
           <Welcome onPick={(act, text) => dispatch(act, text)} />
@@ -462,6 +464,11 @@ export default function ChatApp({ cif = DEFAULT_CIF, sessionId = DEFAULT_SESSION
       <InputBar
         onSend={onSend}
         placeholder={mode === "agent" ? "พิมพ์ถึงเจ้าหน้าที่…" : "พิมพ์ข้อความถึงน้องฟิน…"}
+      />
+      <RequestsDrawer
+        cif={customerId}
+        open={showRequests}
+        onClose={() => setShowRequests(false)}
       />
     </div>
   );

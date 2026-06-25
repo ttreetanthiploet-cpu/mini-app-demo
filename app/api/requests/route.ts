@@ -1,3 +1,40 @@
+type AnyObj = Record<string, unknown>;
+
+// Handles all n8n response shapes:
+//   [[{json:{...}}]]          double-nested
+//   [[{json:{request_offer:[...]}}]]  double-nested with request_offer
+//   [{json:{...}}]            single-nested
+//   {request_offer:[...]}     flat with request_offer
+//   {...item fields...}        single flat item
+function extractItems(data: unknown): unknown[] {
+  if (!data) return [];
+
+  // Unwrap double-nesting: [[...]] → [...]
+  if (Array.isArray(data) && Array.isArray(data[0])) {
+    return extractItems(data[0]);
+  }
+
+  // Array of n8n-wrapped items: [{json:{...}}, ...]
+  if (Array.isArray(data)) {
+    const inner = data.map((d) => {
+      const obj = d as AnyObj;
+      return obj?.json && typeof obj.json === "object" ? obj.json : obj;
+    });
+    // If the single unwrapped item has request_offer, expand it
+    if (inner.length === 1 && Array.isArray((inner[0] as AnyObj)?.request_offer)) {
+      return (inner[0] as AnyObj).request_offer as unknown[];
+    }
+    return inner;
+  }
+
+  // Single object with request_offer field — recurse to unwrap nesting inside
+  const obj = data as AnyObj;
+  if (Array.isArray(obj?.request_offer)) return extractItems(obj.request_offer);
+
+  // Single flat item
+  return [data];
+}
+
 export async function POST(request: Request) {
   const { cif } = (await request.json()) as { cif: string };
 
@@ -22,10 +59,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const data = await upstream.json();
-  // n8n wraps each item as [{ json: {...} }, ...] — unwrap if needed
-  const items = Array.isArray(data)
-    ? data.map((d: Record<string, unknown>) => (d.json && typeof d.json === "object" ? d.json : d))
-    : data;
-  return Response.json(items);
+  const text = await upstream.text();
+  if (!text.trim()) return Response.json([]);
+
+  const data = JSON.parse(text);
+  return Response.json(extractItems(data));
 }

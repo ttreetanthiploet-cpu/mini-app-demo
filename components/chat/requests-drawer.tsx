@@ -21,10 +21,10 @@ type UploadState = {
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; border: string; dot: string }> = {
   "อยู่ระหว่างตรวจสอบ": {
-    bg: "#fff7ed",
-    color: "#9a3412",
-    border: "#fed7aa",
-    dot: "#f97316",
+    bg: "#fefce8",
+    color: "#854d0e",
+    border: "#fde047",
+    dot: "#eab308",
   },
   "ขอเอกสารเพิ่มเติม": {
     bg: "#e0f5fd",
@@ -126,6 +126,15 @@ function RequestsCarousel({
     setActiveIdx(idx);
   }, []);
 
+  function goTo(idx: number) {
+    const track = trackRef.current;
+    if (!track) return;
+    track.scrollTo({ left: idx * track.clientWidth, behavior: "smooth" });
+  }
+
+  const canPrev = activeIdx > 0;
+  const canNext = activeIdx < requests.length - 1;
+
   return (
     <div className="req-carousel">
       <div className="req-carousel-track" ref={trackRef} onScroll={handleScroll}>
@@ -135,16 +144,28 @@ function RequestsCarousel({
           </div>
         ))}
       </div>
-      <div className="req-dots">
-        {requests.map((_, i) => (
-          <span
-            key={i}
-            className={`req-dot${i === activeIdx ? " req-dot-active" : ""}`}
-            onClick={() => {
-              trackRef.current?.scrollTo({ left: i * (trackRef.current.clientWidth), behavior: "smooth" });
-            }}
-          />
-        ))}
+      <div className="req-carousel-nav">
+        <button
+          className="req-nav-btn"
+          onClick={() => goTo(activeIdx - 1)}
+          disabled={!canPrev}
+          aria-label="ก่อนหน้า"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <span className="req-nav-counter">{activeIdx + 1} / {requests.length}</span>
+        <button
+          className="req-nav-btn"
+          onClick={() => goTo(activeIdx + 1)}
+          disabled={!canNext}
+          aria-label="ถัดไป"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
     </div>
   );

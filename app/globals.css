@@ -1651,24 +1651,46 @@ body {
   min-width: 0;
 }
 
-.req-dots {
+.req-carousel-nav {
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 12px;
 }
 
-.req-dot {
-  width: 6px;
-  height: 6px;
+.req-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--line);
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
 }
 
-.req-dot-active {
-  background: var(--accent);
-  transform: scale(1.25);
+.req-nav-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-ink);
+}
+
+.req-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.req-nav-counter {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 40px;
+  text-align: center;
+  letter-spacing: 0.02em;
 }
 
 /* Animations */

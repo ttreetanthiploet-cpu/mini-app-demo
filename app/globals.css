@@ -1594,8 +1594,8 @@ body {
   border: none;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(160deg, #f59e0b 0%, #d97706 100%);
-  box-shadow: 0 8px 18px -10px rgba(217, 119, 6, 0.5);
+  background: linear-gradient(160deg, #00a4e5 0%, #0082c8 100%);
+  box-shadow: 0 8px 18px -10px rgba(0, 130, 200, 0.45);
   transition:
     transform 0.14s ease,
     opacity 0.14s ease;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { IcAttach, IcCheck } from "@/components/icons";
 
 export type RequestItem = {
@@ -19,33 +19,58 @@ type UploadState = {
   error: string | null;
 };
 
-const STATUS_STYLES: Record<string, { bg: string; color: string; border: string }> = {
+const STATUS_STYLES: Record<string, { bg: string; color: string; border: string; dot: string }> = {
   "อยู่ระหว่างตรวจสอบ": {
-    bg: "color-mix(in oklab, #00a4e5, #fff 86%)",
-    color: "color-mix(in oklab, #00a4e5, #003a55 52%)",
-    border: "color-mix(in oklab, #00a4e5, #fff 65%)",
+    bg: "#fff7ed",
+    color: "#9a3412",
+    border: "#fed7aa",
+    dot: "#f97316",
   },
   "ขอเอกสารเพิ่มเติม": {
-    bg: "color-mix(in oklab, #f59e0b, #fff 82%)",
-    color: "#92400e",
-    border: "color-mix(in oklab, #f59e0b, #fff 58%)",
+    bg: "#e0f5fd",
+    color: "#005f84",
+    border: "#7ed0f5",
+    dot: "#00a4e5",
   },
   "อนุมัติ": {
-    bg: "color-mix(in oklab, #1f9d6b, #fff 85%)",
-    color: "color-mix(in oklab, #1f9d6b, #000 32%)",
-    border: "color-mix(in oklab, #1f9d6b, #fff 65%)",
+    bg: "#dcfce7",
+    color: "#14532d",
+    border: "#86efac",
+    dot: "#22c55e",
   },
   "ไม่อนุมัติ": {
-    bg: "color-mix(in oklab, #dc2626, #fff 85%)",
-    color: "#991b1b",
-    border: "color-mix(in oklab, #dc2626, #fff 65%)",
+    bg: "#fef2f2",
+    color: "#7f1d1d",
+    border: "#fca5a5",
+    dot: "#ef4444",
   },
 };
 
-const FALLBACK_STYLE = { bg: "var(--accent-soft)", color: "var(--accent-ink)", border: "var(--accent-line)" };
+const FALLBACK_STYLE = { bg: "var(--accent-soft)", color: "var(--accent-ink)", border: "var(--accent-line)", dot: "var(--accent)" };
 
 function statusStyle(status: string) {
   return STATUS_STYLES[status] ?? FALLBACK_STYLE;
+}
+
+function parseReportDate(dateStr: string): number {
+  // ISO or standard format
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d.getTime();
+
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m = dateStr.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+  if (m) {
+    const year = parseInt(m[3]);
+    // Convert Buddhist Era (พ.ศ.) to CE if needed
+    const adjustedYear = year > 2500 ? year - 543 : year;
+    return new Date(adjustedYear, parseInt(m[2]) - 1, parseInt(m[1])).getTime();
+  }
+
+  return 0;
+}
+
+function sortByDateDesc(items: RequestItem[]): RequestItem[] {
+  return [...items].sort((a, b) => parseReportDate(b.report_date) - parseReportDate(a.report_date));
 }
 
 // ─── Condensed list card ───────────────────────────────────────────────────────
@@ -67,6 +92,7 @@ function RequestCard({ item, onOpen }: { item: RequestItem; onOpen: () => void }
           className="req-status-badge"
           style={{ background: ss.bg, color: ss.color, borderColor: ss.border }}
         >
+          <span className="req-status-dot" style={{ background: ss.dot }} />
           {item.review_status}
         </span>
       </div>
@@ -79,6 +105,48 @@ function RequestCard({ item, onOpen }: { item: RequestItem; onOpen: () => void }
         </div>
       )}
     </button>
+  );
+}
+
+// ─── Carousel (multiple requests) ────────────────────────────────────────────
+function RequestsCarousel({
+  requests,
+  onSelect,
+}: {
+  requests: RequestItem[];
+  onSelect: (item: RequestItem) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const handleScroll = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const idx = Math.round(track.scrollLeft / track.clientWidth);
+    setActiveIdx(idx);
+  }, []);
+
+  return (
+    <div className="req-carousel">
+      <div className="req-carousel-track" ref={trackRef} onScroll={handleScroll}>
+        {requests.map((item, i) => (
+          <div key={i} className="req-slide">
+            <RequestCard item={item} onOpen={() => onSelect(item)} />
+          </div>
+        ))}
+      </div>
+      <div className="req-dots">
+        {requests.map((_, i) => (
+          <span
+            key={i}
+            className={`req-dot${i === activeIdx ? " req-dot-active" : ""}`}
+            onClick={() => {
+              trackRef.current?.scrollTo({ left: i * (trackRef.current.clientWidth), behavior: "smooth" });
+            }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -114,7 +182,10 @@ function RequestDetail({ item, cif }: { item: RequestItem; cif: string }) {
         style={{ background: ss.bg, color: ss.color, borderColor: ss.border }}
       >
         <span className="req-detail-status-label">สถานะ</span>
-        <span className="req-detail-status-value">{item.review_status}</span>
+        <span className="req-detail-status-value">
+          <span className="req-status-dot req-status-dot-lg" style={{ background: ss.dot }} />
+          {item.review_status}
+        </span>
       </div>
 
       {/* Meta */}
@@ -282,9 +353,14 @@ export default function RequestsDrawer({ cif, open, onClose }: RequestsDrawerPro
               <p>ไม่พบคำขอในระบบ</p>
             </div>
           )}
-          {!loading && !error && !selected && requests.map((item, i) => (
-            <RequestCard key={i} item={item} onOpen={() => setSelected(item)} />
-          ))}
+          {!loading && !error && !selected && (() => {
+            const sorted = sortByDateDesc(requests);
+            return sorted.length === 1
+              ? <RequestCard item={sorted[0]} onOpen={() => setSelected(sorted[0])} />
+              : sorted.length > 1
+                ? <RequestsCarousel requests={sorted} onSelect={setSelected} />
+                : null;
+          })()}
           {selected && <RequestDetail item={selected} cif={cif} />}
         </div>
       </div>

@@ -23,5 +23,9 @@ export async function POST(request: Request) {
   }
 
   const data = await upstream.json();
-  return Response.json(data);
+  // n8n wraps each item as [{ json: {...} }, ...] — unwrap if needed
+  const items = Array.isArray(data)
+    ? data.map((d: Record<string, unknown>) => (d.json && typeof d.json === "object" ? d.json : d))
+    : data;
+  return Response.json(items);
 }

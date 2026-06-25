@@ -1299,13 +1299,29 @@ body {
 
 .req-status-badge {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 4px 10px 4px 8px;
   border-radius: 999px;
   border: 1px solid transparent;
   white-space: nowrap;
   align-self: flex-start;
+  letter-spacing: 0.01em;
+}
+
+.req-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.req-status-dot-lg {
+  width: 8px;
+  height: 8px;
 }
 
 .req-action-hint {
@@ -1313,11 +1329,11 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 8px 15px 10px;
-  background: color-mix(in oklab, #f59e0b, #fff 90%);
-  border-top: 1px dashed color-mix(in oklab, #f59e0b, #fff 55%);
+  background: #e0f5fd;
+  border-top: 1px dashed #7ed0f5;
   font-size: 12px;
   font-weight: 600;
-  color: #92400e;
+  color: #005f84;
 }
 
 /* Back button in drawer header */
@@ -1366,6 +1382,9 @@ body {
 }
 
 .req-detail-status-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 700;
 }
@@ -1456,18 +1475,18 @@ body {
 
 /* Upload section */
 .req-upload-section {
-  border: 1px dashed color-mix(in oklab, #f59e0b, #fff 55%);
+  border: 1px dashed #7ed0f5;
   border-radius: 14px;
   padding: 14px 15px 16px;
-  background: color-mix(in oklab, #f59e0b, #fff 94%);
+  background: #f0faff;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 .req-staff-note {
-  background: color-mix(in oklab, #f59e0b, #fff 86%);
-  border: 1px solid color-mix(in oklab, #f59e0b, #fff 62%);
+  background: #e0f5fd;
+  border: 1px solid #7ed0f5;
   border-radius: 12px;
   padding: 11px 13px;
 }
@@ -1475,7 +1494,7 @@ body {
 .req-staff-note-label {
   font-size: 10.5px;
   font-weight: 700;
-  color: #92400e;
+  color: #005f84;
   display: block;
   margin-bottom: 5px;
   text-transform: uppercase;
@@ -1484,7 +1503,7 @@ body {
 
 .req-staff-note-text {
   font-size: 13px;
-  color: #78350f;
+  color: #005f84;
   line-height: 1.55;
   margin: 0;
 }
@@ -1499,9 +1518,9 @@ body {
   font-weight: 600;
   padding: 11px 16px;
   border-radius: 12px;
-  border: 1.5px dashed color-mix(in oklab, #f59e0b, #fff 40%);
+  border: 1.5px dashed #7ed0f5;
   background: var(--card);
-  color: #92400e;
+  color: #005f84;
   cursor: pointer;
   width: 100%;
   transition:
@@ -1510,7 +1529,7 @@ body {
 }
 
 .req-attach-btn:hover {
-  background: color-mix(in oklab, #f59e0b, #fff 88%);
+  background: #e0f5fd;
 }
 
 .req-attach-btn:disabled {
@@ -1604,6 +1623,52 @@ body {
   border: 1px solid color-mix(in oklab, var(--ok), #fff 68%);
   border-radius: 12px;
   padding: 12px 15px;
+}
+
+/* Carousel */
+.req-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.req-carousel-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.req-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.req-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  min-width: 0;
+}
+
+.req-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.req-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.req-dot-active {
+  background: var(--accent);
+  transform: scale(1.25);
 }
 
 /* Animations */

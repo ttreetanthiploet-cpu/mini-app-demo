@@ -10,7 +10,7 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "เป๋าตัง · ที่ปรึกษาการเงิน",
+  title: "SMART ทันหนี้ · ที่ปรึกษาการเงิน",
   description: "ที่ปรึกษาทางการเงินและปรับโครงสร้างหนี้ กรุงไทย",
   manifest: "/manifest.json",
   appleWebApp: {

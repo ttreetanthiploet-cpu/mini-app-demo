@@ -490,20 +490,141 @@ function OfferCardsBlock({
   onApply?: (entry: OfferCardEntry) => void;
   onLayout?: () => void;
 }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [heights, setHeights] = useState<Record<string, number>>({});
   const readyCount = useRef(0);
+
   const onFrameReady = useCallback(() => {
     readyCount.current++;
     if (readyCount.current >= cards.length) onLayout?.();
   }, [cards.length, onLayout]);
+
+  const onHeightChange = useCallback((planId: string, h: number) => {
+    setHeights((prev) => ({ ...prev, [planId]: h }));
+  }, []);
+
+  const currentHeight = heights[cards[currentIndex]?.planId] ?? 380;
+
+  const prev = useCallback(() => setCurrentIndex((i) => Math.max(0, i - 1)), []);
+  const next = useCallback(() => setCurrentIndex((i) => Math.min(cards.length - 1, i + 1)), [cards.length]);
+
+  const onSwipe = useCallback((dir: "left" | "right") => {
+    if (dir === "left") next();
+    else prev();
+  }, [next, prev]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div className="sys-divider">
         <span>จากความต้องการ น้องฟินมีข้อเสนอ {cards.length} แผนให้พิจารณาค่ะ</span>
       </div>
-      {cards.map((entry) => (
-        <OfferCardFrame key={entry.planId} entry={entry} onApply={onApply} onFirstReady={onFrameReady} />
-      ))}
+
+      {/* Carousel viewport */}
+      <div style={{ position: "relative" }}>
+        <div
+          style={{
+            overflow: "hidden",
+            borderRadius: 16,
+            height: currentHeight,
+            transition: "height 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              transition: "transform 0.35s ease",
+              transform: `translateX(-${currentIndex * 100}%)`,
+            }}
+          >
+            {cards.map((entry) => (
+              <OfferCardFrame
+                key={entry.planId}
+                entry={entry}
+                onApply={onApply}
+                onFirstReady={onFrameReady}
+                onHeightChange={(h) => onHeightChange(entry.planId, h)}
+                onSwipe={onSwipe}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Prev arrow */}
+        {currentIndex > 0 && (
+          <button
+            onClick={prev}
+            style={{
+              position: "absolute",
+              left: 8,
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.9)",
+              border: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              cursor: "pointer",
+              fontSize: 18,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1,
+            }}
+          >
+            ‹
+          </button>
+        )}
+
+        {/* Next arrow */}
+        {currentIndex < cards.length - 1 && (
+          <button
+            onClick={next}
+            style={{
+              position: "absolute",
+              right: 8,
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.9)",
+              border: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              cursor: "pointer",
+              fontSize: 18,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1,
+            }}
+          >
+            ›
+          </button>
+        )}
+      </div>
+
+      {/* Dot indicators */}
+      {cards.length > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+          {cards.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              style={{
+                width: i === currentIndex ? 20 : 8,
+                height: 8,
+                borderRadius: 4,
+                background: i === currentIndex ? "#2563eb" : "#d1d5db",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                transition: "all 0.25s ease",
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -512,10 +633,14 @@ function OfferCardFrame({
   entry,
   onApply,
   onFirstReady,
+  onHeightChange,
+  onSwipe,
 }: {
   entry: OfferCardEntry;
   onApply?: (entry: OfferCardEntry) => void;
   onFirstReady?: () => void;
+  onHeightChange?: (h: number) => void;
+  onSwipe?: (direction: "left" | "right") => void;
 }) {
   const frameId = useRef(`f${Math.random().toString(36).slice(2)}`);
   const html = buildOfferCardHtml(entry.offerCard, frameId.current);
@@ -532,26 +657,37 @@ function OfferCardFrame({
     const handler = (e: MessageEvent) => {
       if (e.data?.frameId !== frameId.current || !iframeRef.current) return;
       if (e.data.action === "resize") {
+        const h = e.data.height as number;
         iframeRef.current.style.minHeight = "0";
-        iframeRef.current.style.height = e.data.height + "px";
+        iframeRef.current.style.height = h + "px";
+        onHeightChange?.(h);
         if (!hasReported.current) {
           hasReported.current = true;
           onFirstReady?.();
         }
       } else if (e.data.action === "applyOffer") {
         onApply?.(entry);
+      } else if (e.data.action === "swipe") {
+        onSwipe?.(e.data.direction as "left" | "right");
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [onApply, entry, onFirstReady]);
+  }, [onApply, entry, onFirstReady, onHeightChange, onSwipe]);
 
   return (
     <iframe
       ref={iframeRef}
       srcDoc={html}
       sandbox="allow-scripts"
-      style={{ width: "100%", border: "none", borderRadius: 16, minHeight: 380, display: "block" }}
+      style={{
+        flex: "0 0 100%",
+        width: "100%",
+        border: "none",
+        borderRadius: 16,
+        minHeight: 380,
+        display: "block",
+      }}
     />
   );
 }
@@ -808,6 +944,25 @@ document.addEventListener('click',e=>{
    oversized iframe height that produced the gap between offer cards. */
 let _rt;
 new ResizeObserver(()=>{clearTimeout(_rt);_rt=setTimeout(resize,50);}).observe(document.body);
+
+/* Horizontal swipe → postMessage so parent carousel can advance slides.
+   Only fires when horizontal displacement beats vertical (i.e. it's a real
+   side-swipe, not a scroll attempt), with a 40 px minimum distance. */
+(function(){
+  var sx,sy;
+  document.addEventListener('touchstart',function(e){
+    var t=e.touches[0];sx=t.clientX;sy=t.clientY;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(sx==null)return;
+    var t=e.changedTouches[0];
+    var dx=t.clientX-sx,dy=t.clientY-sy;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){
+      post({action:'swipe',direction:dx<0?'left':'right'});
+    }
+    sx=sy=null;
+  },{passive:true});
+})();
 </script>
 </body>
 </html>`;

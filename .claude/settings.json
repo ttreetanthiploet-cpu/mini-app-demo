@@ -1,10 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s -X POST https://alphamakeathon-automation.arisetech.dev/webhook/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"cif\": \"121000143468\"}')",
-      "Bash(curl -s -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"cif\": \"121000143468\"}')",
-      "Bash(curl -sv -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"cif\": \"121000143468\"}')",
-      "Bash(curl -s -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"customerId\": \"121000767926\"}')",
+      "Bash(curl -s -X POST https://alphamakeathon-automation.arisetech.dev/webhook-test/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"cif\": \"121000143468\"}')",
+      "Bash(curl -s -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook-test/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"cif\": \"121000143468\"}')",
+      "Bash(curl -sv -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook-test/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"cif\": \"121000143468\"}')",
+      "Bash(curl -s -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook-test/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"customerId\": \"121000767926\"}')",
       "Skill(code-review)",
       "Skill(code-review:*)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
@@ -12,8 +12,8 @@
       "Bash(curl -s -X POST http://localhost:3000/api/requests -H 'Content-Type: application/json' -d '{\"cif\":\"121000110704\"}')",
       "Bash(curl -sv -X POST http://localhost:3000/api/requests -H 'Content-Type: application/json' -d '{\"cif\":\"121000110704\"}')",
       "Bash(curl -s -X POST http://localhost:3000/api/requests -H 'Content-Type: application/json' -d '{\"cif\":\"121000110704\"}' -w '\\\\nHTTP %{http_code}')",
-      "Bash(curl -s -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"customerId\":\"121000110704\"}')",
-      "Bash(curl -s -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"customerId\":\"121000767926\"}')",
+      "Bash(curl -s -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook-test/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"customerId\":\"121000110704\"}')",
+      "Bash(curl -s -X PATCH https://alphamakeathon-automation.arisetech.dev/webhook-test/7c1903c5-3796-448f-8d69-6ff56daed09d -H 'Content-Type: application/json' -d '{\"customerId\":\"121000767926\"}')",
       "Bash(curl -s -X POST http://localhost:3000/api/requests -H 'Content-Type: application/json' -d '{\"cif\":\"121000767926\"}')",
       "Bash(python3 -c ' *)"
     ]

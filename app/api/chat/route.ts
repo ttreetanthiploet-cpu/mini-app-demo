@@ -14,7 +14,7 @@ import {
 
 const N8N_URL =
   process.env.N8N_WEBHOOK_URL ??
-  "https://alphamakeathon-automation.arisetech.dev/webhook/ab7cbae4-8fed-413e-8281-00b053145a79";
+  "https://alphamakeathon-automation.arisetech.dev/webhook-test/ab7cbae4-8fed-413e-8281-00b053145a79";
 
 export async function POST(request: Request) {
   const body = await request.json();

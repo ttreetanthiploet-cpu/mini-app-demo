@@ -505,8 +505,13 @@ function OfferCardsBlock({
 
   const currentHeight = heights[cards[currentIndex]?.planId] ?? 380;
 
-  const prev = () => setCurrentIndex((i) => Math.max(0, i - 1));
-  const next = () => setCurrentIndex((i) => Math.min(cards.length - 1, i + 1));
+  const prev = useCallback(() => setCurrentIndex((i) => Math.max(0, i - 1)), []);
+  const next = useCallback(() => setCurrentIndex((i) => Math.min(cards.length - 1, i + 1)), [cards.length]);
+
+  const onSwipe = useCallback((dir: "left" | "right") => {
+    if (dir === "left") next();
+    else prev();
+  }, [next, prev]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -538,6 +543,7 @@ function OfferCardsBlock({
                 onApply={onApply}
                 onFirstReady={onFrameReady}
                 onHeightChange={(h) => onHeightChange(entry.planId, h)}
+                onSwipe={onSwipe}
               />
             ))}
           </div>
@@ -628,11 +634,13 @@ function OfferCardFrame({
   onApply,
   onFirstReady,
   onHeightChange,
+  onSwipe,
 }: {
   entry: OfferCardEntry;
   onApply?: (entry: OfferCardEntry) => void;
   onFirstReady?: () => void;
   onHeightChange?: (h: number) => void;
+  onSwipe?: (direction: "left" | "right") => void;
 }) {
   const frameId = useRef(`f${Math.random().toString(36).slice(2)}`);
   const html = buildOfferCardHtml(entry.offerCard, frameId.current);
@@ -659,11 +667,13 @@ function OfferCardFrame({
         }
       } else if (e.data.action === "applyOffer") {
         onApply?.(entry);
+      } else if (e.data.action === "swipe") {
+        onSwipe?.(e.data.direction as "left" | "right");
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [onApply, entry, onFirstReady, onHeightChange]);
+  }, [onApply, entry, onFirstReady, onHeightChange, onSwipe]);
 
   return (
     <iframe
@@ -934,6 +944,25 @@ document.addEventListener('click',e=>{
    oversized iframe height that produced the gap between offer cards. */
 let _rt;
 new ResizeObserver(()=>{clearTimeout(_rt);_rt=setTimeout(resize,50);}).observe(document.body);
+
+/* Horizontal swipe → postMessage so parent carousel can advance slides.
+   Only fires when horizontal displacement beats vertical (i.e. it's a real
+   side-swipe, not a scroll attempt), with a 40 px minimum distance. */
+(function(){
+  var sx,sy;
+  document.addEventListener('touchstart',function(e){
+    var t=e.touches[0];sx=t.clientX;sy=t.clientY;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(sx==null)return;
+    var t=e.changedTouches[0];
+    var dx=t.clientX-sx,dy=t.clientY-sy;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){
+      post({action:'swipe',direction:dx<0?'left':'right'});
+    }
+    sx=sy=null;
+  },{passive:true});
+})();
 </script>
 </body>
 </html>`;
